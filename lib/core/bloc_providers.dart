@@ -1,0 +1,24 @@
+// lib/core/bloc_providers.dart
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:maa3/features/auth1/presentation/bloc/auth_cubit.dart';
+import 'package:maa3/features/memberpro/presentation/bloc/member_cubit.dart';
+import 'package:maa3/features/bookings/presentation/bloc/booking_cubit.dart';
+import 'package:maa3/features/attendance/presentation/bloc/attendance_cubit.dart';
+import 'package:maa3/features/coaches/presentation/bloc/coach_cubit.dart';
+import 'package:maa3/features/classtypes/presentation/bloc/class_type_cubit.dart';
+import 'package:maa3/features/feedbacks/presentation/bloc/feedback_cubit.dart';
+import 'package:maa3/features/progress/presentation/bloc/progress_cubit.dart';
+import 'package:maa3/features/sessions/presentation/bloc/session_cubit.dart';
+import 'injection_container.dart';
+
+List<BlocProvider> get appBlocProviders => [
+  BlocProvider<AuthCubit>(create: (_) => sl<AuthCubit>()),
+  BlocProvider<MemberCubit>(create: (_) => sl<MemberCubit>()),
+  BlocProvider<BookingCubit>(create: (_) => sl<BookingCubit>()),
+  BlocProvider<AttendanceCubit>(create: (_) => sl<AttendanceCubit>()),
+  BlocProvider<CoachCubit>(create: (_) => sl<CoachCubit>()),
+  BlocProvider<ClassTypeCubit>(create: (_) => sl<ClassTypeCubit>()),
+  BlocProvider<FeedbackCubit>(create: (_) => sl<FeedbackCubit>()),
+  BlocProvider<ProgressCubit>(create: (_) => sl<ProgressCubit>()),
+  BlocProvider<SessionCubit>(create: (_) => sl<SessionCubit>()),
+];
