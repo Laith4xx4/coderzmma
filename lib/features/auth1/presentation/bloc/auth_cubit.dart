@@ -16,7 +16,6 @@ class AuthCubit extends Cubit<AuthState> {
       this._authRepository,
       ) : super(AuthInitial());
 
-  // ====================== 🔐 تسجيل الدخول ======================
   Future<void> login(String email, String password) async {
     if (email.isEmpty || password.isEmpty) {
       emit(const AuthFailure(error: 'البريد وكلمة المرور لا يمكن أن تكون فارغة.'));
@@ -26,15 +25,14 @@ class AuthCubit extends Cubit<AuthState> {
     emit(AuthLoading());
 
     try {
-      // 1. تسجيل الدخول المبدئي (يجلب التوكن فقط)
       final user = await _loginUser(email, password);
 
-      // 2. إصدار حالة النجاح لكي ينتقل التطبيق للصفحة التالية
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString("token", user.token ?? "");
+      await prefs.setString("userEmail", user.email);
+
       emit(AuthSuccess(token: user.token ?? '', user: user));
 
-      print("🚀 Login successful! Token received. Now fetching full profile...");
-
-      // 3. استدعاء دالة جلب البيانات الكاملة وتحديث الذاكرة
       await fetchUserProfile();
 
     } catch (e) {
@@ -42,11 +40,10 @@ class AuthCubit extends Cubit<AuthState> {
     }
   }
 
-  // ====================== 🧾 تسجيل حساب جديد ======================
   Future<void> register({
     required String email,
     required String password,
-    required String role,
+    required String role, // ← أضف هذا السطر
     String? firstName,
     String? lastName,
     String? phoneNumber,
@@ -56,9 +53,9 @@ class AuthCubit extends Cubit<AuthState> {
 
     try {
       final user = await _registerUser(
+        userName: email, // أو استخدم userName إذا كان موجود
         email: email,
         password: password,
-        role: role,
         firstName: firstName,
         lastName: lastName,
         phoneNumber: phoneNumber,
@@ -66,42 +63,34 @@ class AuthCubit extends Cubit<AuthState> {
       );
 
       emit(AuthSuccess(token: user.token ?? '', user: user));
-      // يمكن أيضاً استدعاء fetchUserProfile هنا إذا كان التسجيل يعيد توكن فقط
-
     } catch (e) {
       emit(AuthFailure(error: e.toString()));
     }
   }
 
-  // ====================== 👤 جلب بيانات المستخدم (Profile) ======================
+
   Future<void> fetchUserProfile() async {
     try {
       final prefs = await SharedPreferences.getInstance();
       final token = prefs.getString("token");
+      final email = prefs.getString("userEmail");
 
-      if (token == null || token.isEmpty) return;
+      if (token == null || token.isEmpty || email == null || email.isEmpty) return;
 
-      // الاتصال بـ API: api/Users/me
-      final user = await _authRepository.getUserProfile("");
+      final user = await _authRepository.getUserProfile(email);
 
-      // حفظ البيانات الكاملة
       await prefs.setString("firstName", user.firstName ?? "");
       await prefs.setString("lastName", user.lastName ?? "");
       await prefs.setString("userRole", user.role);
       await prefs.setString("userEmail", user.email);
 
-      // تحديث الحالة
       emit(AuthSuccess(token: token, user: user));
-
-      print("✅✅✅ PROFILE UPDATED: ${user.firstName} ${user.lastName} - Role: ${user.role}");
-
     } catch (e) {
-      print("❌❌❌ Failed to fetch profile: $e");
+      print("Failed to fetch profile: $e");
     }
   }
 
-  // ====================== 🚪 تسجيل الخروج ======================
-  void logout() async {
+  Future<void> logout() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.clear();
     emit(AuthInitial());

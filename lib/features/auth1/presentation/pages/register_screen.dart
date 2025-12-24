@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:maa3/core/app_theme.dart'; // استيراد الثيم الجديد
 import 'package:maa3/features/auth1/presentation/bloc/auth_cubit.dart';
 import 'package:maa3/features/auth1/presentation/bloc/auth_state.dart';
 import 'package:maa3/features/auth1/presentation/pages/login_screen.dart';
@@ -22,9 +23,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   bool _obscurePassword = true;
   DateTime? _selectedDate;
-  String? _selectedRole;
-
-  final List<String> _roles = ['Member', 'Coach', 'Admin'];
 
   Future<void> _pickDate() async {
     final now = DateTime.now();
@@ -33,13 +31,25 @@ class _RegisterScreenState extends State<RegisterScreen> {
       initialDate: now.subtract(const Duration(days: 365 * 18)),
       firstDate: DateTime(1900),
       lastDate: now,
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: const ColorScheme.light(
+              primary: AppTheme.primaryColor, // الأسود الفخم
+              onPrimary: Colors.white,
+              onSurface: AppTheme.primaryColor,
+            ),
+          ),
+          child: child!,
+        );
+      },
     );
 
     if (picked != null) {
       setState(() {
         _selectedDate = picked;
         _dobController.text =
-            "${picked.year}-${picked.month.toString().padLeft(2, '0')}-${picked.day.toString().padLeft(2, '0')}";
+        "${picked.year}-${picked.month.toString().padLeft(2, '0')}-${picked.day.toString().padLeft(2, '0')}";
       });
     }
   }
@@ -47,17 +57,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: AppTheme.backgroundColor, // السكني الفاتح جداً
       appBar: AppBar(
-        backgroundColor: const Color(0xFF129AA6),
+        backgroundColor: Colors.transparent,
         elevation: 0,
-        title: const Text(
-          'Register',
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-        ),
-        centerTitle: true,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: AppTheme.primaryColor),
           onPressed: () => Navigator.pop(context),
         ),
       ),
@@ -65,284 +70,75 @@ class _RegisterScreenState extends State<RegisterScreen> {
         listener: (context, state) {
           if (state is AuthSuccess) {
             ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Registration successful! Please login.'),
-                backgroundColor: Colors.green,
-              ),
+              const SnackBar(content: Text('Registration successful!'), backgroundColor: AppTheme.successColor),
             );
-            // Navigate to login screen after successful registration
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(builder: (context) => const LoginScreen()),
-            );
+            Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const LoginScreen()));
           } else if (state is AuthFailure) {
             ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text('Registration Failed: ${state.error}'),
-                backgroundColor: Colors.red,
-              ),
+              SnackBar(content: Text('Error: ${state.error}'), backgroundColor: AppTheme.errorColor),
             );
           }
         },
         builder: (context, state) {
           return SingleChildScrollView(
-            padding: const EdgeInsets.all(24.0),
+            physics: const BouncingScrollPhysics(),
+            padding: const EdgeInsets.symmetric(horizontal: 24.0),
             child: Form(
               key: _formKey,
               child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const SizedBox(height: 40),
-                  // Logo or Icon
-                  Container(
-                    padding: const EdgeInsets.all(20),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF129AA6).withOpacity(0.1),
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Icon(
-                      Icons.person_add,
-                      size: 80,
-                      color: Color(0xFF129AA6),
-                    ),
-                  ),
-                  const SizedBox(height: 40),
-                  const Text(
-                    'Create Account',
-                    style: TextStyle(
-                      fontSize: 28,
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFF129AA6),
-                    ),
-                  ),
+                  const SizedBox(height: 10),
+                  const Text('Create Account', style: AppTheme.heading1),
                   const SizedBox(height: 8),
-                  const Text(
-                    'Sign up to get started',
-                    style: TextStyle(fontSize: 16, color: Colors.grey),
-                  ),
-                  const SizedBox(height: 40),
-                  // Email Field
-                  TextFormField(
-                    controller: _emailController,
+                  const Text('Sign up to start your training journey', style: AppTheme.bodyMedium),
+                  const SizedBox(height: 32),
+
+                  // الحقول في بطاقات (Cards) كما في تصميم الـ Login
+                  _buildRegisterField(_firstNameController, 'First Name', Icons.person_outline),
+                  const SizedBox(height: 16),
+                  _buildRegisterField(_lastNameController, 'Last Name', Icons.person_outline),
+                  const SizedBox(height: 16),
+                  _buildRegisterField(
+                    _emailController,
+                    'Email Address',
+                    Icons.email_outlined,
                     keyboardType: TextInputType.emailAddress,
-                    decoration: InputDecoration(
-                      labelText: 'Email *',
-                      prefixIcon: const Icon(Icons.email),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      filled: true,
-                      fillColor: Colors.grey[50],
-                    ),
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Please enter your email';
-                      }
-                      if (!RegExp(
-                        r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$',
-                      ).hasMatch(value)) {
-                        return 'Please enter a valid email';
-                      }
-                      return null;
-                    },
+                    validator: (v) => (v == null || !v.contains('@')) ? 'Invalid email' : null,
                   ),
-                  const SizedBox(height: 20.0),
-                  // Password Field
-                  TextFormField(
-                    controller: _passwordController,
-                    obscureText: _obscurePassword,
-                    decoration: InputDecoration(
-                      labelText: 'Password *',
-                      prefixIcon: const Icon(Icons.lock),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      filled: true,
-                      fillColor: Colors.grey[50],
-                      suffixIcon: IconButton(
-                        icon: Icon(
-                          _obscurePassword
-                              ? Icons.visibility_off
-                              : Icons.visibility,
-                        ),
-                        onPressed: () {
-                          setState(() {
-                            _obscurePassword = !_obscurePassword;
-                          });
-                        },
-                      ),
-                    ),
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Please enter your password';
-                      }
-                      if (value.length < 6) {
-                        return 'Password must be at least 6 characters';
-                      }
-                      return null;
-                    },
+                  const SizedBox(height: 16),
+                  _buildRegisterField(
+                    _passwordController,
+                    'Password',
+                    Icons.lock_outline,
+                    isPassword: true,
+                    obscure: _obscurePassword,
+                    onToggle: () => setState(() => _obscurePassword = !_obscurePassword),
+                    validator: (v) => (v == null || v.length < 6) ? 'Min 6 characters' : null,
                   ),
-                  const SizedBox(height: 20.0),
-                  // Role Dropdown
-                  DropdownButtonFormField<String>(
-                    value: _selectedRole,
-                    decoration: InputDecoration(
-                      labelText: 'Role *',
-                      prefixIcon: const Icon(Icons.person_outline),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      filled: true,
-                      fillColor: Colors.grey[50],
-                    ),
-                    items: _roles.map((String role) {
-                      return DropdownMenuItem<String>(
-                        value: role,
-                        child: Text(role),
-                      );
-                    }).toList(),
-                    onChanged: (String? newValue) {
-                      setState(() {
-                        _selectedRole = newValue;
-                      });
-                    },
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Please select a role';
-                      }
-                      return null;
-                    },
-                  ),
-                  const SizedBox(height: 20.0),
-                  // First Name Field
-                  TextFormField(
-                    controller: _firstNameController,
-                    decoration: InputDecoration(
-                      labelText: 'First Name',
-                      prefixIcon: const Icon(Icons.person),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      filled: true,
-                      fillColor: Colors.grey[50],
-                    ),
-                  ),
-                  const SizedBox(height: 20.0),
-                  // Last Name Field
-                  TextFormField(
-                    controller: _lastNameController,
-                    decoration: InputDecoration(
-                      labelText: 'Last Name',
-                      prefixIcon: const Icon(Icons.person),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      filled: true,
-                      fillColor: Colors.grey[50],
-                    ),
-                  ),
-                  const SizedBox(height: 20.0),
-                  // Phone Number Field
-                  TextFormField(
-                    controller: _phoneController,
-                    keyboardType: TextInputType.phone,
-                    decoration: InputDecoration(
-                      labelText: 'Phone Number',
-                      prefixIcon: const Icon(Icons.phone),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      filled: true,
-                      fillColor: Colors.grey[50],
-                    ),
-                  ),
-                  const SizedBox(height: 20.0),
-                  // Date of Birth Field
-                  TextFormField(
-                    controller: _dobController,
-                    readOnly: true,
-                    decoration: InputDecoration(
-                      labelText: 'Date of Birth',
-                      prefixIcon: const Icon(Icons.calendar_today),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      filled: true,
-                      fillColor: Colors.grey[50],
-                    ),
-                    onTap: _pickDate,
-                  ),
-                  const SizedBox(height: 32.0),
-                  // Register Button
+                  const SizedBox(height: 16),
+                  _buildRegisterField(_phoneController, 'Phone Number', Icons.phone_android_outlined, keyboardType: TextInputType.phone),
+                  const SizedBox(height: 16),
+                  _buildRegisterField(_dobController, 'Date of Birth', Icons.calendar_today_outlined, readOnly: true, onTap: _pickDate),
+
+                  const SizedBox(height: 40),
+
+                  // زر التسجيل الموحد
                   state is AuthLoading
-                      ? const CircularProgressIndicator()
+                      ? const Center(child: CircularProgressIndicator(color: AppTheme.primaryColor))
                       : SizedBox(
-                          width: double.infinity,
-                          child: ElevatedButton(
-                            onPressed: () {
-                              if (_formKey.currentState!.validate()) {
-                                context.read<AuthCubit>().register(
-                                  email: _emailController.text,
-                                  password: _passwordController.text,
-                                  role: _selectedRole!,
-                                  firstName: _firstNameController.text.isEmpty
-                                      ? null
-                                      : _firstNameController.text,
-                                  lastName: _lastNameController.text.isEmpty
-                                      ? null
-                                      : _lastNameController.text,
-                                  phoneNumber: _phoneController.text.isEmpty
-                                      ? null
-                                      : _phoneController.text,
-                                  dateOfBirth: _selectedDate,
-                                );
-                              }
-                            },
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFF129AA6),
-                              foregroundColor: Colors.white,
-                              padding: const EdgeInsets.symmetric(vertical: 16),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                            ),
-                            child: const Text(
-                              'Register',
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ),
-                        ),
-                  const SizedBox(height: 16.0),
-                  // Login Link
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Text(
-                        'Already have an account? ',
-                        style: TextStyle(color: Colors.grey),
-                      ),
-                      TextButton(
-                        onPressed: () {
-                          Navigator.pushReplacement(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => const LoginScreen(),
-                            ),
-                          );
-                        },
-                        child: const Text(
-                          'Login',
-                          style: TextStyle(
-                            color: Color(0xFF129AA6),
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                    ],
+                    width: double.infinity,
+                    height: 56,
+                    child: ElevatedButton(
+                      onPressed: _onRegisterPressed,
+                      style: AppTheme.primaryButtonStyle,
+                      child: const Text('REGISTER', style: TextStyle(letterSpacing: 1.5, fontWeight: FontWeight.bold)),
+                    ),
                   ),
+
+                  const SizedBox(height: 24),
+                  _buildFooter(),
+                  const SizedBox(height: 40),
                 ],
               ),
             ),
@@ -350,6 +146,71 @@ class _RegisterScreenState extends State<RegisterScreen> {
         },
       ),
     );
+  }
+
+  Widget _buildRegisterField(
+      TextEditingController controller,
+      String label,
+      IconData icon, {
+        bool isPassword = false,
+        bool obscure = false,
+        VoidCallback? onToggle,
+        TextInputType? keyboardType,
+        bool readOnly = false,
+        VoidCallback? onTap,
+        String? Function(String?)? validator,
+      }) {
+    return Container(
+      decoration: AppTheme.cardDecoration(),
+      child: TextFormField(
+        controller: controller,
+        obscureText: obscure,
+        keyboardType: keyboardType,
+        readOnly: readOnly,
+        onTap: onTap,
+        validator: validator,
+        style: AppTheme.bodyLarge,
+        decoration: InputDecoration(
+          labelText: label,
+          labelStyle: AppTheme.bodySmall,
+          prefixIcon: Icon(icon, color: AppTheme.primaryColor, size: 20),
+          suffixIcon: isPassword
+              ? IconButton(icon: Icon(obscure ? Icons.visibility_off : Icons.visibility, size: 20), onPressed: onToggle)
+              : null,
+          border: InputBorder.none,
+          contentPadding: const EdgeInsets.symmetric(vertical: 18, horizontal: 16),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFooter() {
+    return Center(
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Text('Already have an account? ', style: AppTheme.bodyMedium),
+          GestureDetector(
+            onTap: () => Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const LoginScreen())),
+            child: const Text('Login', style: TextStyle(color: AppTheme.primaryColor, fontWeight: FontWeight.bold, decoration: TextDecoration.underline)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _onRegisterPressed() {
+    if (_formKey.currentState!.validate()) {
+      context.read<AuthCubit>().register(
+        email: _emailController.text,
+        password: _passwordController.text,
+        role: 'Member',
+        firstName: _firstNameController.text.isEmpty ? null : _firstNameController.text,
+        lastName: _lastNameController.text.isEmpty ? null : _lastNameController.text,
+        phoneNumber: _phoneController.text.isEmpty ? null : _phoneController.text,
+        dateOfBirth: _selectedDate,
+      );
+    }
   }
 
   @override

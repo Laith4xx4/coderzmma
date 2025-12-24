@@ -6,25 +6,24 @@ class RegisterUser {
 
   RegisterUser(this.repository);
 
-  /// دالة تسجيل مستخدم جديد
-  /// الآن تدعم الحقول الاختيارية مثل الاسم الأول/الأخير، رقم الهاتف وتاريخ الميلاد
   Future<User> call({
+    required String userName,
     required String email,
     required String password,
-    required String role,
     String? firstName,
     String? lastName,
     String? phoneNumber,
     DateTime? dateOfBirth,
   }) {
     return repository.register(
+      userName: userName,
       email: email,
       password: password,
-      role: role,
       firstName: firstName,
       lastName: lastName,
       phoneNumber: phoneNumber,
       dateOfBirth: dateOfBirth,
     );
   }
+
 }

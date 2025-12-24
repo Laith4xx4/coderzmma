@@ -148,15 +148,12 @@ class _MemberListPageState extends State<MemberListPage> {
 
   void _showAddMemberDialog(BuildContext context) async {
     final _formKey = GlobalKey<FormState>();
-    final TextEditingController _userIdController = TextEditingController();
+    final TextEditingController _userNameController = TextEditingController(); // استخدام UserName
     final TextEditingController _firstNameController = TextEditingController();
     final TextEditingController _lastNameController = TextEditingController();
-    final TextEditingController _emergencyContactNameController =
-        TextEditingController();
-    final TextEditingController _emergencyContactPhoneController =
-        TextEditingController();
-    final TextEditingController _medicalInfoController =
-        TextEditingController();
+    final TextEditingController _emergencyContactNameController = TextEditingController();
+    final TextEditingController _emergencyContactPhoneController = TextEditingController();
+    final TextEditingController _medicalInfoController = TextEditingController();
 
     showDialog(
       context: context,
@@ -170,8 +167,8 @@ class _MemberListPageState extends State<MemberListPage> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   TextFormField(
-                    controller: _userIdController,
-                    decoration: const InputDecoration(labelText: 'User ID *'),
+                    controller: _userNameController,
+                    decoration: const InputDecoration(labelText: 'User Name *'), // تعديل النص
                     validator: (value) => value!.isEmpty ? 'Required' : null,
                   ),
                   const SizedBox(height: 16),
@@ -187,24 +184,18 @@ class _MemberListPageState extends State<MemberListPage> {
                   const SizedBox(height: 16),
                   TextFormField(
                     controller: _emergencyContactNameController,
-                    decoration: const InputDecoration(
-                      labelText: 'Emergency Contact Name',
-                    ),
+                    decoration: const InputDecoration(labelText: 'Emergency Contact Name'),
                   ),
                   const SizedBox(height: 16),
                   TextFormField(
                     controller: _emergencyContactPhoneController,
-                    decoration: const InputDecoration(
-                      labelText: 'Emergency Contact Phone',
-                    ),
+                    decoration: const InputDecoration(labelText: 'Emergency Contact Phone'),
                     keyboardType: TextInputType.phone,
                   ),
                   const SizedBox(height: 16),
                   TextFormField(
                     controller: _medicalInfoController,
-                    decoration: const InputDecoration(
-                      labelText: 'Medical Info',
-                    ),
+                    decoration: const InputDecoration(labelText: 'Medical Info'),
                     maxLines: 3,
                   ),
                 ],
@@ -221,19 +212,13 @@ class _MemberListPageState extends State<MemberListPage> {
                 if (_formKey.currentState!.validate()) {
                   context.read<MemberCubit>().createMemberAction(
                     CreateMemberProfileModel(
-                      userId: _userIdController.text,
-                      firstName: _firstNameController.text.isEmpty
-                          ? null
-                          : _firstNameController.text,
-                      lastName: _lastNameController.text.isEmpty
-                          ? null
-                          : _lastNameController.text,
-                      emergencyContactName:
-                          _emergencyContactNameController.text.isEmpty
+                      userName: _userNameController.text, // استخدام UserName بدل UserId
+                      firstName: _firstNameController.text.isEmpty ? null : _firstNameController.text,
+                      lastName: _lastNameController.text.isEmpty ? null : _lastNameController.text,
+                      emergencyContactName: _emergencyContactNameController.text.isEmpty
                           ? null
                           : _emergencyContactNameController.text,
-                      emergencyContactPhone:
-                          _emergencyContactPhoneController.text.isEmpty
+                      emergencyContactPhone: _emergencyContactPhoneController.text.isEmpty
                           ? null
                           : _emergencyContactPhoneController.text,
                       medicalInfo: _medicalInfoController.text.isEmpty

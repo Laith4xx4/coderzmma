@@ -5,6 +5,7 @@ class CreateSessionModel {
   final DateTime endTime;
   final int capacity;
   final String? description;
+  final String sessionName;   // جديد
 
   CreateSessionModel({
     required this.coachId,
@@ -13,6 +14,7 @@ class CreateSessionModel {
     required this.endTime,
     required this.capacity,
     this.description,
+    required this.sessionName,
   });
 
   Map<String, dynamic> toJson() {
@@ -23,6 +25,7 @@ class CreateSessionModel {
       'endTime': endTime.toIso8601String(),
       'capacity': capacity,
       'description': description,
+      'sessionName': sessionName,
     };
   }
 }

@@ -8,6 +8,7 @@ class User {
 
   /// دور المستخدم (مثل "admin" أو "user")
   final String role;
+ final String userName;
 
   /// توكن المصادقة، قد يكون null لبعض العمليات
   final String? token;
@@ -30,6 +31,7 @@ class User {
     required this.id,
     required this.email,
     required this.role,
+    required this.userName,
     this.token,
     this.firstName,
     this.lastName,
@@ -46,6 +48,7 @@ class User {
         other.id == id &&
         other.email == email &&
         other.role == role &&
+        other.userName == userName &&
         other.token == token &&
         other.firstName == firstName &&
         other.lastName == lastName &&
@@ -59,6 +62,7 @@ class User {
     return id.hashCode ^
     email.hashCode ^
     role.hashCode ^
+    userName.hashCode ^
     token.hashCode ^
     firstName.hashCode ^
     lastName.hashCode ^

@@ -1,38 +1,39 @@
 import 'package:maa3/features/auth1/domain/entities/user.dart';
 
 class UserModel extends User {
-  // لا تقم بإعادة تعريف المتغيرات هنا لأنها موجودة في User
-
+  // إزالة const
   UserModel({
     required super.id,
     required super.email,
     required super.role,
+    required super.userName,
     super.token,
-    super.firstName,   // نمررها للأب مباشرة
-    super.lastName,    // نمررها للأب مباشرة
-    super.phoneNumber, // نمررها للأب مباشرة
-    super.dateOfBirth, // نمررها للأب مباشرة
+    super.firstName,
+    super.lastName,
+    super.phoneNumber,
+    super.dateOfBirth,
   });
 
   factory UserModel.fromJson(Map<String, dynamic> json) {
+    final dateString = json['dateOfBirth'] ?? json['DateOfBirth'];
+
+    String role = 'Member';
+    if (json.containsKey('role') && json['role'] != null && json['role'].toString().isNotEmpty) {
+      role = json['role'].toString();
+    } else if (json.containsKey('roles') && json['roles'] is List && (json['roles'] as List).isNotEmpty) {
+      role = (json['roles'] as List).first.toString();
+    }
+
     return UserModel(
-      // استخدام toString() يضمن العمل سواء كان الـ ID نصاً أو رقماً في قاعدة البيانات
-      id: json['id'].toString(),
-
-      email: json['email'] ?? '', // تجنب الـ Null
-
-      // هنا نضمن وجود Role حتى لو لم يرسله الباك اند
-      role: json['role'] ?? 'Member',
-
-      token: json['token'],
-      firstName: json['firstName'],
-      lastName: json['lastName'],
-      phoneNumber: json['phoneNumber'],
-
-      // tryParse أفضل من parse لأنه لا يسبب crash إذا كان التاريخ بتنسيق خاطئ
-      dateOfBirth: json['dateOfBirth'] != null
-          ? DateTime.tryParse(json['dateOfBirth'])
-          : null,
+      id: json['id']?.toString() ?? '',
+      email: json['email']?.toString() ?? '',
+      role: role,
+      userName: (json['userName'] ?? json['UserName'] ?? '').toString(),
+      token: json['token']?.toString(),
+      firstName: json['firstName'] ?? json['FirstName'],
+      lastName: json['lastName'] ?? json['LastName'],
+      phoneNumber: json['phoneNumber'] ?? json['PhoneNumber'],
+      dateOfBirth: dateString != null ? DateTime.tryParse(dateString.toString()) : null,
     );
   }
 
@@ -41,6 +42,7 @@ class UserModel extends User {
       'id': id,
       'email': email,
       'role': role,
+      'userName': userName,
       'token': token,
       'firstName': firstName,
       'lastName': lastName,

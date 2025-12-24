@@ -16,7 +16,6 @@ import 'package:maa3/features/classtypes/presentation/bloc/class_type_cubit.dart
 import 'package:maa3/features/classtypes/presentation/bloc/class_type_state.dart';
 
 class SessionListPage extends StatefulWidget {
-  // ↓↓↓ إضافة المتغيّرات الاختيارية للفلترة بالـ ClassType ↓↓↓
   final int? classTypeId;
   final String? classTypeName;
 
@@ -67,7 +66,6 @@ class _SessionListPageState extends State<SessionListPage> {
       backgroundColor: AppTheme.backgroundColor,
       appBar: AppBar(
         backgroundColor: AppTheme.primaryColor,
-        // ↓↓↓ تعديل العنوان حسب الفلتر ↓↓↓
         title: Text(
           widget.classTypeId == null
               ? 'Sessions'
@@ -104,11 +102,9 @@ class _SessionListPageState extends State<SessionListPage> {
           }
 
           if (state is SessionsLoaded) {
-            // ↓↓↓ فلترة الجلسات إذا كان فيه classTypeId ↓↓↓
             List<SessionEntity> sessions = state.sessions;
 
             if (widget.classTypeId != null) {
-              // تأكد أن SessionEntity يحتوي على خاصية classTypeId
               sessions = sessions
                   .where((s) => s.classTypeId == widget.classTypeId)
                   .toList();
@@ -156,6 +152,8 @@ class _SessionListPageState extends State<SessionListPage> {
     final TextEditingController _capacityController = TextEditingController();
     final TextEditingController _descriptionController =
     TextEditingController();
+    final TextEditingController _sessionNameController =
+    TextEditingController(); // جديد
 
     int? selectedCoachId;
     int? selectedClassTypeId;
@@ -173,6 +171,15 @@ class _SessionListPageState extends State<SessionListPage> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
+                  // Session Name
+                  TextFormField(
+                    controller: _sessionNameController,
+                    decoration:
+                    const InputDecoration(labelText: 'Session Name'),
+                    validator: (value) =>
+                    value == null || value.isEmpty ? 'Enter name' : null,
+                  ),
+
                   // Coach Dropdown
                   DropdownButtonFormField<int>(
                     decoration: const InputDecoration(labelText: 'Coach'),
@@ -189,7 +196,8 @@ class _SessionListPageState extends State<SessionListPage> {
 
                   // ClassType Dropdown
                   DropdownButtonFormField<int>(
-                    decoration: const InputDecoration(labelText: 'Class Type'),
+                    decoration:
+                    const InputDecoration(labelText: 'Class Type'),
                     items: classTypes.map((type) {
                       return DropdownMenuItem(
                         value: type.id,
@@ -236,8 +244,9 @@ class _SessionListPageState extends State<SessionListPage> {
                         }
                       }
                     },
-                    validator: (value) =>
-                    value!.isEmpty ? 'Select start date & time' : null,
+                    validator: (value) => value == null || value.isEmpty
+                        ? 'Select start date & time'
+                        : null,
                   ),
 
                   // End Date & Time
@@ -273,8 +282,9 @@ class _SessionListPageState extends State<SessionListPage> {
                         }
                       }
                     },
-                    validator: (value) =>
-                    value!.isEmpty ? 'Select end date & time' : null,
+                    validator: (value) => value == null || value.isEmpty
+                        ? 'Select end date & time'
+                        : null,
                   ),
 
                   TextFormField(
@@ -283,7 +293,9 @@ class _SessionListPageState extends State<SessionListPage> {
                     const InputDecoration(labelText: 'Capacity'),
                     keyboardType: TextInputType.number,
                     validator: (value) =>
-                    value!.isEmpty ? 'Enter capacity' : null,
+                    value == null || value.isEmpty
+                        ? 'Enter capacity'
+                        : null,
                   ),
                   TextFormField(
                     controller: _descriptionController,
@@ -315,6 +327,7 @@ class _SessionListPageState extends State<SessionListPage> {
                     description: _descriptionController.text.isEmpty
                         ? null
                         : _descriptionController.text,
+                    sessionName: _sessionNameController.text,
                   );
 
                   context.read<SessionCubit>().createSessionAction(data);
@@ -392,7 +405,10 @@ class SessionCard extends StatelessWidget {
               const SizedBox(width: AppTheme.spacingMD),
               Expanded(
                 child: Text(
-                  'Session #${session.id}',
+                  // إظهار اسم الجلسة بدلاً من "Session #id"
+                  session.sessionName.isNotEmpty
+                      ? session.sessionName
+                      : 'Session #${session.id}',
                   style: AppTheme.heading3.copyWith(fontSize: 18),
                 ),
               ),
@@ -486,8 +502,46 @@ class SessionCard extends StatelessWidget {
               Expanded(
                 child: StatItem(
                   icon: Icons.person,
-                  label: 'Coach ID',
-                  value: '${session.coachId}',
+                  label: 'Coach',
+                  value: session.coachName.isNotEmpty
+                      ? session.coachName
+                      : 'ID: ${session.coachId}',
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: AppTheme.spacingSM),
+          Row(
+            children: [
+              Expanded(
+                child: StatItem(
+                  icon: Icons.class_,
+                  label: 'Class',
+                  value: session.classTypeName,
+                ),
+              ),
+              Container(
+                width: 1,
+                height: 40,
+                color: AppTheme.textLight.withOpacity(0.2),
+              ),
+              Expanded(
+                child: StatItem(
+                  icon: Icons.list_alt,
+                  label: 'Bookings',
+                  value: '${session.bookingsCount}',
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: AppTheme.spacingSM),
+          Row(
+            children: [
+              Expanded(
+                child: StatItem(
+                  icon: Icons.how_to_reg,
+                  label: 'Attendance',
+                  value: '${session.attendanceCount}',
                 ),
               ),
             ],

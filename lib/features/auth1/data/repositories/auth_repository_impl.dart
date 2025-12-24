@@ -1,100 +1,141 @@
-import 'package:shared_preferences/shared_preferences.dart'; // 1. إضافة هذا الاستيراد
-import 'package:maa3/features/auth1/data/datasource/auth_api_service.dart';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
+
+import 'package:maa3/features/auth1/data/models/user_model.dart';
 import 'package:maa3/features/auth1/domain/entities/user.dart';
 import 'package:maa3/features/auth1/domain/repositories/auth_repository.dart';
-import 'package:maa3/features/auth1/data/models/user_model.dart';
 
 class AuthRepositoryImpl implements AuthRepository {
-  final AuthApiService remoteDataSource;
+  final String baseUrl;
 
-  AuthRepositoryImpl(this.remoteDataSource);
+  AuthRepositoryImpl({required this.baseUrl});
 
-  @override
-  Future<User> login(String email, String password) async {
-    final Map<String, dynamic> responseData = await remoteDataSource.login(
-      email,
-      password,
-    );
+  /// دالة داخلية لحفظ التوكن من الـ JSON (بغض النظر عن اسم المفتاح)
+  Future<String?> _saveTokenFromResponse(Map<String, dynamic> data) async {
+    // عدل أسماء المفاتيح حسب الـ API عندك
+    final rawToken =
+        data['token'] ?? data['Token'] ?? data['accessToken'] ?? data['jwt'];
 
-    final roleFromApi = responseData['role']?.toString() ?? 'Member';
+    if (rawToken == null) return null;
 
-    return UserModel(
-      id: responseData['id']?.toString() ?? '',
-      email: responseData['email']?.toString() ?? email,
-      role: roleFromApi,
-      token: responseData['token']?.toString(),
-      firstName: responseData['firstName']?.toString(),
-      lastName: responseData['lastName']?.toString(),
-      phoneNumber: responseData['phoneNumber']?.toString(),
-      dateOfBirth: responseData['dateOfBirth'] != null
-          ? DateTime.tryParse(responseData['dateOfBirth'].toString())
-          : null,
-    );
+    final token = rawToken.toString();
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('token', token);
+    return token;
   }
 
+  // ====================== 🔐 تسجيل الدخول ======================
+  @override
+  Future<User> login(String email, String password) async {
+    final url = Uri.parse('$baseUrl/Auth/login');
+    final response = await http.post(
+      url,
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({
+        'userNameOrEmail': email,
+        'password': password,
+      }),
+    );
+
+    if (response.statusCode == 200) {
+      final Map<String, dynamic> data = jsonDecode(response.body);
+
+      // حفظ التوكن في SharedPreferences
+      final token = await _saveTokenFromResponse(data);
+
+      // نضمن أن اسم الحقل في الـ JSON هو "token" ليستعمله UserModel
+      final normalized = {
+        ...data,
+        if (token != null) 'token': token,
+      };
+
+      return UserModel.fromJson(normalized);
+    } else {
+      throw Exception('Login failed (${response.statusCode}): ${response.body}');
+    }
+  }
+
+  // ====================== 🧾 تسجيل حساب جديد ======================
   @override
   Future<User> register({
+    required String userName,
     required String email,
     required String password,
-    required String role,
     String? firstName,
     String? lastName,
     String? phoneNumber,
     DateTime? dateOfBirth,
   }) async {
-    final Map<String, dynamic> responseData = await remoteDataSource.register(
-      email: email,
-      password: password,
-      role: role,
-      firstName: firstName,
-      lastName: lastName,
-      phoneNumber: phoneNumber,
-      dateOfBirth: dateOfBirth?.toIso8601String(),
+    final url = Uri.parse('$baseUrl/Auth/register');
+
+    final requestBody = {
+      'userName': userName,
+      'email': email,
+      'password': password,
+      'role': 'Member', // الدور الافتراضي
+      'firstName': firstName,
+      'lastName': lastName,
+      'phoneNumber': phoneNumber,
+      'dateOfBirth': dateOfBirth?.toIso8601String(),
+    };
+
+    final response = await http.post(
+      url,
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode(requestBody),
     );
 
-    final roleFromApi = responseData['role']?.toString() ?? role;
+    if (response.statusCode == 200 || response.statusCode == 201) {
+      final Map<String, dynamic> data = jsonDecode(response.body);
 
-    return UserModel(
-      id: responseData['id']?.toString() ?? '',
-      email: responseData['email']?.toString() ?? email,
-      role: roleFromApi,
-      token: responseData['token']?.toString(),
-      firstName: responseData['firstName']?.toString(),
-      lastName: responseData['lastName']?.toString(),
-      phoneNumber: responseData['phoneNumber']?.toString(),
-      dateOfBirth: responseData['dateOfBirth'] != null
-          ? DateTime.tryParse(responseData['dateOfBirth'].toString())
-          : null,
-    );
+      // بعض الـ APIs ترجع توكن بعد التسجيل
+      final token = await _saveTokenFromResponse(data);
+
+      final normalized = {
+        ...data,
+        if (token != null) 'token': token,
+      };
+
+      return UserModel.fromJson(normalized);
+    } else {
+      throw Exception(
+          'Register failed (${response.statusCode}): ${response.body}');
+    }
   }
 
-  // ==================== الدالة الجديدة التي كانت مفقودة ====================
+  // ====================== 👤 جلب بيانات المستخدم ======================
   @override
   Future<User> getUserProfile(String email) async {
-    // 1. نحتاج التوكن لإرساله للسيرفر
     final prefs = await SharedPreferences.getInstance();
-    final token = prefs.getString("token");
+    final token = prefs.getString('token');
 
     if (token == null || token.isEmpty) {
-      throw Exception("User is not authenticated (No Token found)");
+      throw Exception('No auth token found. Please login again.');
     }
 
-    // 2. استدعاء الـ API الذي يجلب البيانات بناءً على التوكن
-    // لاحظ أننا نستخدم الدالة الجديدة التي أضفناها في AuthApiService
-    final Map<String, dynamic> responseData = await remoteDataSource.getCurrentUserProfile(token);
-
-    // 3. تحويل البيانات إلى موديل
-    return UserModel(
-      id: responseData['id']?.toString() ?? '',
-      email: responseData['email']?.toString() ?? '',
-      role: responseData['role']?.toString() ?? 'Member',
-      token: responseData['token']?.toString() ?? token, // نستخدم التوكن القديم إذا لم يرسله السيرفر
-      firstName: responseData['firstName']?.toString(),
-      lastName: responseData['lastName']?.toString(),
-      phoneNumber: responseData['phoneNumber']?.toString(),
-      dateOfBirth: responseData['dateOfBirth'] != null
-          ? DateTime.tryParse(responseData['dateOfBirth'].toString())
-          : null,
+    final url = Uri.parse('$baseUrl/Users/$email');
+    final response = await http.get(
+      url,
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token', // مهم جداً
+      },
     );
+
+    if (response.statusCode == 200) {
+      final Map<String, dynamic> data = jsonDecode(response.body);
+
+      final normalized = {
+        ...data,
+        'token': token, // نضمن أن التوكن موجود في الموديل
+      };
+
+      return UserModel.fromJson(normalized);
+    } else {
+      throw Exception(
+        'Failed to fetch profile (${response.statusCode}): ${response.body}',
+      );
+    }
   }
 }

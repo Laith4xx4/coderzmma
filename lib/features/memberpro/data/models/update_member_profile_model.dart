@@ -14,12 +14,13 @@ class UpdateMemberProfileModel {
   });
 
   Map<String, dynamic> toJson() {
+    // التصحيح: السيرفر في C# يفضل استقبال القيم حتى لو كانت فارغة لتحديثها
     return {
-      'FirstName': firstName,
-      'LastName': lastName,
-      'EmergencyContactName': emergencyContactName,
-      'EmergencyContactPhone': emergencyContactPhone,
-      'MedicalInfo': medicalInfo,
+      'FirstName': firstName ?? '',
+      'LastName': lastName ?? '',
+      'EmergencyContactName': emergencyContactName ?? '',
+      'EmergencyContactPhone': emergencyContactPhone ?? '',
+      'MedicalInfo': medicalInfo ?? '',
     };
   }
 }

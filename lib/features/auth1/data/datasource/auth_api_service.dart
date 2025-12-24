@@ -2,11 +2,11 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 class AuthApiService {
-  // الرابط الأساسي للـ Auth
+  // // الرابط الأساسي للـ Auth
   final String _authBaseUrl = 'http://192.168.100.66:5086/api/Auth';
-
+  // final String _authBaseUrl = 'http://192.168.68.108:5086/api/Auth';
   // الرابط الأساسي للمستخدمين
-  final String _usersBaseUrl = 'http://192.168.100.66:5086/api/Users';
+  final String _usersBaseUrl = 'http://192.168.100.66/api/Users';
 
   // =================== Login ===================
   Future<Map<String, dynamic>> login(String email, String password) async {

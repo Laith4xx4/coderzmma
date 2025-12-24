@@ -1,23 +1,24 @@
 class CoachEntity {
   final int id;
   final String userId;
-  final String bio;
-  final String specialization;
-  final String? certifications;
   final String userName;
+
+  // حقول اختيارية:
+  final String? bio;
+  final String? specialization;
+  final String? certifications;
+
   final int sessionsCount;
   final int feedbacksCount;
 
-  CoachEntity({
+  const CoachEntity({
     required this.id,
     required this.userId,
-    required this.bio,
-    required this.specialization,
-    this.certifications,
     required this.userName,
+    this.bio,
+    this.specialization,
+    this.certifications,
     required this.sessionsCount,
     required this.feedbacksCount,
   });
 }
-
-

@@ -1,68 +1,63 @@
 import 'package:flutter/material.dart';
 
 class AppTheme {
-  // Primary Colors
-  static const Color primaryColor = Color(0xFF129AA6);
-  static const Color primaryDark = Color(0xFF0E7A83);
-  static const Color primaryLight = Color(0xFF4DB5C0);
+  // الألوان الأساسية (الأسود والسكني الداكن)
+  static const Color primaryColor = Color(0xFF1A1A1A); // أسود كربوني
+  static const Color primaryDark = Color(0xFF000000);  // أسود خالص
+  static const Color primaryLight = Color(0xFF333333); // سكني غامق جداً
 
-  // Background Colors
-  static const Color backgroundColor = Color(0xFFF5F7FA);
+  // ألوان الخلفية
+  static const Color backgroundColor = Color(0xFFF2F2F2); // سكني فاتح جداً للخلفية
   static const Color cardBackground = Colors.white;
   static const Color surfaceColor = Colors.white;
 
-  // Text Colors
-  static const Color textPrimary = Color(0xFF1A1A1A);
-  static const Color textSecondary = Color(0xFF6B7280);
-  static const Color textLight = Color(0xFF9CA3AF);
+  // ألوان النصوص
+  static const Color textPrimary = Color(0xFF000000);   // أسود للنصوص الأساسية
+  static const Color textSecondary = Color(0xFF4A4A4A); // سكني متوسط
+  static const Color textLight = Color(0xFF8E8E8E);     // سكني فاتح
 
-  // Status Colors
-  static const Color successColor = Color(0xFF10B981);
-  static const Color errorColor = Color(0xFFEF4444);
-  static const Color warningColor = Color(0xFFF59E0B);
-  static const Color infoColor = Color(0xFF3B82F6);
+  // ألوان الحالة (بقيت كما هي للوضوح الوظيفي)
+  static const Color successColor = Color(0xFF27AE60);
+  static const Color errorColor = Color(0xFFC0392B);
+  static const Color warningColor = Color(0xFFF39C12);
+  static const Color infoColor = Color(0xFF2980B9);
 
-  // Shadows
+  // الظلال (Shadows) تم جعلها أنعم لتناسب اللون السكني
   static List<BoxShadow> get cardShadow => [
     BoxShadow(
-      color: Colors.black.withOpacity(0.05),
-      blurRadius: 10,
-      offset: const Offset(0, 2),
-    ),
-    BoxShadow(
-      color: Colors.black.withOpacity(0.03),
-      blurRadius: 6,
-      offset: const Offset(0, 1),
+      color: Colors.black.withOpacity(0.08),
+      blurRadius: 12,
+      offset: const Offset(0, 4),
     ),
   ];
 
   static List<BoxShadow> get elevatedShadow => [
     BoxShadow(
-      color: Colors.black.withOpacity(0.08),
-      blurRadius: 15,
-      offset: const Offset(0, 4),
-    ),
-    BoxShadow(
-      color: Colors.black.withOpacity(0.05),
-      blurRadius: 8,
-      offset: const Offset(0, 2),
+      color: Colors.black.withOpacity(0.12),
+      blurRadius: 20,
+      offset: const Offset(0, 8),
     ),
   ];
 
-  // Border Radius
+  // القياسات (Border Radius & Spacing) - بقيت ثابتة للحفاظ على الهيكلية
   static const double borderRadiusSmall = 8.0;
   static const double borderRadiusMedium = 12.0;
   static const double borderRadiusLarge = 16.0;
   static const double borderRadiusXLarge = 24.0;
 
-  // Spacing
   static const double spacingXS = 4.0;
   static const double spacingSM = 8.0;
   static const double spacingMD = 16.0;
   static const double spacingLG = 24.0;
   static const double spacingXL = 32.0;
 
-  // Card Style
+  // التدرج اللوني (Gradient) - تدرج سكني فخم
+  static LinearGradient primaryGradient = const LinearGradient(
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+    colors: [Color(0xFF434343), Color(0xFF000000)], // من السكني الغامق للأسود
+  );
+
   static BoxDecoration cardDecoration({
     Color? color,
     double? borderRadius,
@@ -72,72 +67,48 @@ class AppTheme {
       color: color ?? cardBackground,
       borderRadius: BorderRadius.circular(borderRadius ?? borderRadiusMedium),
       boxShadow: shadows ?? cardShadow,
+      border: Border.all(color: Colors.black.withOpacity(0.05)), // إطار خفيف جداً
     );
   }
 
-  // Gradient
-  static LinearGradient primaryGradient = LinearGradient(
-    begin: Alignment.topLeft,
-    end: Alignment.bottomRight,
-    colors: [primaryColor, primaryDark],
-  );
-
-  // Text Styles
+  // ستايلات النصوص المحدثة بالألوان الجديدة
   static const TextStyle heading1 = TextStyle(
-    fontSize: 32,
-    fontWeight: FontWeight.bold,
-    color: textPrimary,
-    letterSpacing: -0.5,
+    fontSize: 32, fontWeight: FontWeight.bold, color: textPrimary, letterSpacing: -0.5,
   );
 
   static const TextStyle heading2 = TextStyle(
-    fontSize: 24,
-    fontWeight: FontWeight.bold,
-    color: textPrimary,
-    letterSpacing: -0.3,
+    fontSize: 24, fontWeight: FontWeight.bold, color: textPrimary, letterSpacing: -0.3,
   );
 
   static const TextStyle heading3 = TextStyle(
-    fontSize: 20,
-    fontWeight: FontWeight.w600,
-    color: textPrimary,
+    fontSize: 20, fontWeight: FontWeight.w600, color: textPrimary,
   );
 
   static const TextStyle bodyLarge = TextStyle(
-    fontSize: 16,
-    fontWeight: FontWeight.normal,
-    color: textPrimary,
+    fontSize: 16, fontWeight: FontWeight.normal, color: textPrimary,
   );
 
   static const TextStyle bodyMedium = TextStyle(
-    fontSize: 14,
-    fontWeight: FontWeight.normal,
-    color: textSecondary,
+    fontSize: 14, fontWeight: FontWeight.normal, color: textSecondary,
   );
 
   static const TextStyle bodySmall = TextStyle(
-    fontSize: 12,
-    fontWeight: FontWeight.normal,
-    color: textLight,
+    fontSize: 12, fontWeight: FontWeight.normal, color: textLight,
   );
 
-  // Button Styles
+  // أزرار فخمة باللون الأسود
   static ButtonStyle primaryButtonStyle = ElevatedButton.styleFrom(
     backgroundColor: primaryColor,
     foregroundColor: Colors.white,
     elevation: 0,
     padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-    shape: RoundedRectangleBorder(
-      borderRadius: BorderRadius.circular(borderRadiusMedium),
-    ),
+    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(borderRadiusMedium)),
   );
 
   static ButtonStyle outlinedButtonStyle = OutlinedButton.styleFrom(
     foregroundColor: primaryColor,
-    side: const BorderSide(color: primaryColor, width: 1.5),
+    side: const BorderSide(color: primaryColor, width: 2),
     padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-    shape: RoundedRectangleBorder(
-      borderRadius: BorderRadius.circular(borderRadiusMedium),
-    ),
+    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(borderRadiusMedium)),
   );
 }

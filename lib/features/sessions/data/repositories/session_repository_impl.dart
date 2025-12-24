@@ -14,11 +14,16 @@ class SessionRepositoryImpl implements SessionRepository {
     return SessionEntity(
       id: m.id,
       coachId: m.coachId,
+      coachName: m.coachName ?? '',
       classTypeId: m.classTypeId,
+      classTypeName: m.classTypeName ?? '',
       startTime: m.startTime,
       endTime: m.endTime,
       capacity: m.capacity,
       description: m.description,
+      sessionName: m.sessionName ?? '',
+      bookingsCount: m.bookingsCount ?? 0,
+      attendanceCount: m.attendanceCount ?? 0,
     );
   }
 
@@ -50,4 +55,3 @@ class SessionRepositoryImpl implements SessionRepository {
     await apiService.deleteSession(id);
   }
 }
-

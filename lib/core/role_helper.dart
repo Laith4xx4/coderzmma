@@ -4,7 +4,7 @@ class RoleHelper {
   static const String adminRole = 'Admin';
   static const String coachRole = 'Coach';
   static const String memberRole = 'Member';
-
+  // static const String laithRole = 'laith';
   /// Get current user role from SharedPreferences
   static Future<String> getCurrentUserRole() async {
     final prefs = await SharedPreferences.getInstance();

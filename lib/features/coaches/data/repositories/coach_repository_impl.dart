@@ -14,10 +14,10 @@ class CoachRepositoryImpl implements CoachRepository {
     return CoachEntity(
       id: m.id,
       userId: m.userId,
-      bio: m.bio,
+      bio: m.bio, // أو m.bio ?? '' لو الحقل في الـ Entity غير nullable
+      userName: m.userName, // نوحّد الاسم ونستغني عن username
       specialization: m.specialization,
       certifications: m.certifications,
-      userName: m.userName,
       sessionsCount: m.sessionsCount,
       feedbacksCount: m.feedbacksCount,
     );
@@ -51,5 +51,3 @@ class CoachRepositoryImpl implements CoachRepository {
     await apiService.deleteCoach(id);
   }
 }
-
-

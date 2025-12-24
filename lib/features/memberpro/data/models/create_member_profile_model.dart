@@ -1,5 +1,5 @@
 class CreateMemberProfileModel {
-  final String userId;
+  final String userName;
   final String? firstName;
   final String? lastName;
   final String? emergencyContactName;
@@ -8,7 +8,7 @@ class CreateMemberProfileModel {
   final DateTime joinDate;
 
   CreateMemberProfileModel({
-    required this.userId,
+    required this.userName,
     this.firstName,
     this.lastName,
     this.emergencyContactName,
@@ -17,15 +17,31 @@ class CreateMemberProfileModel {
     required this.joinDate,
   });
 
+  // التصحيح في تحويل البيانات لضمان عدم إرسال حقول إجبارية فارغة للسيرفر
   Map<String, dynamic> toJson() {
     return {
-      'UserId': userId,
-      'FirstName': firstName,
-      'LastName': lastName,
-      'EmergencyContactName': emergencyContactName,
-      'EmergencyContactPhone': emergencyContactPhone,
-      'MedicalInfo': medicalInfo,
+      'UserName': userName,
+      'FirstName': firstName ?? '', // نضع نصاً فارغاً إذا كان null لتجنب مشاكل الـ Backend
+      'LastName': lastName ?? '',
+      'EmergencyContactName': emergencyContactName ?? '',
+      'EmergencyContactPhone': emergencyContactPhone ?? '',
+      'MedicalInfo': medicalInfo ?? '',
       'JoinDate': joinDate.toIso8601String(),
     };
+  }
+
+  // إضافة factory من أجل التحويل من JSON في حال احتجت لعرض البيانات بعد إنشائها
+  factory CreateMemberProfileModel.fromJson(Map<String, dynamic> json) {
+    return CreateMemberProfileModel(
+      userName: json['userName'] ?? '', // استخدام ?? لضمان عدم استقبال Null
+      firstName: json['firstName'],
+      lastName: json['lastName'],
+      emergencyContactName: json['emergencyContactName'],
+      emergencyContactPhone: json['emergencyContactPhone'],
+      medicalInfo: json['medicalInfo'],
+      joinDate: json['joinDate'] != null
+          ? DateTime.parse(json['joinDate'])
+          : DateTime.now(),
+    );
   }
 }

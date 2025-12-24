@@ -68,10 +68,10 @@ class _CoachListPageState extends State<CoachListPage> {
               return Center(
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Icon(Icons.person_outline, size: 64, color: Colors.grey),
-                    const SizedBox(height: 16),
-                    const Text(
+                  children: const [
+                    Icon(Icons.person_outline, size: 64, color: Colors.grey),
+                    SizedBox(height: 16),
+                    Text(
                       'No coaches found.',
                       style: TextStyle(fontSize: 18, color: Colors.grey),
                     ),
@@ -128,16 +128,16 @@ class _CoachListPageState extends State<CoachListPage> {
   }
 
   void _showAddCoachDialog(BuildContext context) async {
-    final _formKey = GlobalKey<FormState>();
-    final TextEditingController _userIdController = TextEditingController();
-    final TextEditingController _bioController = TextEditingController();
-    final TextEditingController _specializationController = TextEditingController();
-    final TextEditingController _certificationsController = TextEditingController();
+    final formKey = GlobalKey<FormState>();
+    final userNameController = TextEditingController();
+    final bioController = TextEditingController();
+    final specializationController = TextEditingController();
+    final certificationsController = TextEditingController();
 
-    // Get current user email as default userId
+    // الحصول على البريد الإلكتروني الحالي كـ default UserName (إن وُجد)
     final prefs = await SharedPreferences.getInstance();
     final currentUserEmail = prefs.getString("userEmail") ?? "";
-    _userIdController.text = currentUserEmail;
+    userNameController.text = currentUserEmail;
 
     showDialog(
       context: context,
@@ -145,33 +145,43 @@ class _CoachListPageState extends State<CoachListPage> {
         return AlertDialog(
           title: const Text('Add Coach'),
           content: Form(
-            key: _formKey,
+            key: formKey,
             child: SingleChildScrollView(
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   TextFormField(
-                    controller: _userIdController,
-                    decoration: const InputDecoration(labelText: 'User ID *'),
-                    validator: (value) => value!.isEmpty ? 'Required' : null,
+                    controller: userNameController,
+                    decoration:
+                    const InputDecoration(labelText: 'User Name *'),
+                    validator: (value) => value == null || value.isEmpty
+                        ? 'Required'
+                        : null,
                   ),
                   const SizedBox(height: 16),
                   TextFormField(
-                    controller: _specializationController,
-                    decoration: const InputDecoration(labelText: 'Specialization *'),
-                    validator: (value) => value!.isEmpty ? 'Required' : null,
+                    controller: specializationController,
+                    decoration:
+                    const InputDecoration(labelText: 'Specialization *'),
+                    validator: (value) => value == null || value.isEmpty
+                        ? 'Required'
+                        : null,
                   ),
                   const SizedBox(height: 16),
                   TextFormField(
-                    controller: _bioController,
+                    controller: bioController,
                     decoration: const InputDecoration(labelText: 'Bio *'),
                     maxLines: 3,
-                    validator: (value) => value!.isEmpty ? 'Required' : null,
+                    validator: (value) => value == null || value.isEmpty
+                        ? 'Required'
+                        : null,
                   ),
                   const SizedBox(height: 16),
                   TextFormField(
-                    controller: _certificationsController,
-                    decoration: const InputDecoration(labelText: 'Certifications (Optional)'),
+                    controller: certificationsController,
+                    decoration: const InputDecoration(
+                      labelText: 'Certifications (Optional)',
+                    ),
                     maxLines: 2,
                   ),
                 ],
@@ -185,15 +195,16 @@ class _CoachListPageState extends State<CoachListPage> {
             ),
             ElevatedButton(
               onPressed: () {
-                if (_formKey.currentState!.validate()) {
+                if (formKey.currentState!.validate()) {
                   context.read<CoachCubit>().createCoachAction(
                     CreateCoachModel(
-                      userId: _userIdController.text,
-                      bio: _bioController.text,
-                      specialization: _specializationController.text,
-                      certifications: _certificationsController.text.isEmpty
+                      userName: userNameController.text,
+                      bio: bioController.text,
+                      specialization: specializationController.text,
+                      certifications:
+                      certificationsController.text.isEmpty
                           ? null
-                          : _certificationsController.text,
+                          : certificationsController.text,
                     ),
                   );
                   Navigator.pop(context);
@@ -208,10 +219,13 @@ class _CoachListPageState extends State<CoachListPage> {
   }
 
   void _showEditCoachDialog(BuildContext context, CoachEntity coach) {
-    final _formKey = GlobalKey<FormState>();
-    final TextEditingController _bioController = TextEditingController(text: coach.bio);
-    final TextEditingController _specializationController = TextEditingController(text: coach.specialization);
-    final TextEditingController _certificationsController = TextEditingController(text: coach.certifications ?? '');
+    final formKey = GlobalKey<FormState>();
+    final bioController =
+    TextEditingController(text: coach.bio ?? ''); // ← null-safe
+    final specializationController =
+    TextEditingController(text: coach.specialization ?? '');
+    final certificationsController =
+    TextEditingController(text: coach.certifications ?? '');
 
     showDialog(
       context: context,
@@ -219,27 +233,34 @@ class _CoachListPageState extends State<CoachListPage> {
         return AlertDialog(
           title: const Text('Edit Coach'),
           content: Form(
-            key: _formKey,
+            key: formKey,
             child: SingleChildScrollView(
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   TextFormField(
-                    controller: _specializationController,
-                    decoration: const InputDecoration(labelText: 'Specialization *'),
-                    validator: (value) => value!.isEmpty ? 'Required' : null,
+                    controller: specializationController,
+                    decoration:
+                    const InputDecoration(labelText: 'Specialization *'),
+                    validator: (value) => value == null || value.isEmpty
+                        ? 'Required'
+                        : null,
                   ),
                   const SizedBox(height: 16),
                   TextFormField(
-                    controller: _bioController,
+                    controller: bioController,
                     decoration: const InputDecoration(labelText: 'Bio *'),
                     maxLines: 3,
-                    validator: (value) => value!.isEmpty ? 'Required' : null,
+                    validator: (value) => value == null || value.isEmpty
+                        ? 'Required'
+                        : null,
                   ),
                   const SizedBox(height: 16),
                   TextFormField(
-                    controller: _certificationsController,
-                    decoration: const InputDecoration(labelText: 'Certifications (Optional)'),
+                    controller: certificationsController,
+                    decoration: const InputDecoration(
+                      labelText: 'Certifications (Optional)',
+                    ),
                     maxLines: 2,
                   ),
                 ],
@@ -253,15 +274,16 @@ class _CoachListPageState extends State<CoachListPage> {
             ),
             ElevatedButton(
               onPressed: () {
-                if (_formKey.currentState!.validate()) {
+                if (formKey.currentState!.validate()) {
                   context.read<CoachCubit>().updateCoachAction(
                     coach.id,
                     UpdateCoachModel(
-                      bio: _bioController.text,
-                      specialization: _specializationController.text,
-                      certifications: _certificationsController.text.isEmpty
+                      bio: bioController.text,
+                      specialization: specializationController.text,
+                      certifications:
+                      certificationsController.text.isEmpty
                           ? null
-                          : _certificationsController.text,
+                          : certificationsController.text,
                     ),
                   );
                   Navigator.pop(context);
@@ -280,7 +302,8 @@ class _CoachListPageState extends State<CoachListPage> {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Delete Coach'),
-        content: const Text('Are you sure you want to delete this coach?'),
+        content:
+        const Text('Are you sure you want to delete this coach?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
@@ -292,7 +315,10 @@ class _CoachListPageState extends State<CoachListPage> {
               Navigator.pop(context);
             },
             style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-            child: const Text('Delete', style: TextStyle(color: Colors.white)),
+            child: const Text(
+              'Delete',
+              style: TextStyle(color: Colors.white),
+            ),
           ),
         ],
       ),
@@ -343,7 +369,7 @@ class CoachCard extends StatelessWidget {
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Text(
-                        coach.specialization,
+                        coach.specialization ?? '', // ← null-safe
                         style: AppTheme.bodyMedium.copyWith(
                           color: AppTheme.primaryColor,
                           fontWeight: FontWeight.w600,
@@ -361,20 +387,23 @@ class CoachCard extends StatelessWidget {
             padding: const EdgeInsets.all(AppTheme.spacingMD),
             decoration: BoxDecoration(
               color: AppTheme.backgroundColor,
-              borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
+              borderRadius:
+              BorderRadius.circular(AppTheme.borderRadiusMedium),
             ),
             child: Text(
-              coach.bio,
+              coach.bio ?? '', // ← null-safe
               style: AppTheme.bodyMedium,
             ),
           ),
-          if (coach.certifications != null && coach.certifications!.isNotEmpty) ...[
+          if (coach.certifications != null &&
+              coach.certifications!.isNotEmpty) ...[
             const SizedBox(height: AppTheme.spacingMD),
             Container(
               padding: const EdgeInsets.all(AppTheme.spacingSM),
               decoration: BoxDecoration(
                 color: AppTheme.successColor.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
+                borderRadius:
+                BorderRadius.circular(AppTheme.borderRadiusMedium),
                 border: Border.all(
                   color: AppTheme.successColor.withOpacity(0.3),
                 ),
@@ -405,7 +434,8 @@ class CoachCard extends StatelessWidget {
             padding: const EdgeInsets.all(AppTheme.spacingMD),
             decoration: BoxDecoration(
               color: AppTheme.backgroundColor,
-              borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
+              borderRadius:
+              BorderRadius.circular(AppTheme.borderRadiusMedium),
             ),
             child: Row(
               children: [

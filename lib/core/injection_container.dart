@@ -1,5 +1,6 @@
 // lib/core/injection_container.dart
 import 'package:get_it/get_it.dart';
+import 'package:maa3/core/api_strings.dart';
 
 // Auth
 import 'package:maa3/features/auth1/data/datasource/auth_api_service.dart';
@@ -86,16 +87,20 @@ Future<void> init() async {
   //========================================
   //              AUTH
   //========================================
-  sl.registerLazySingleton(() => AuthApiService());
-  sl.registerLazySingleton(() => AuthRepositoryImpl(sl<AuthApiService>()));
+  // إنشاء AuthRepositoryImpl مع baseUrl
+  sl.registerLazySingleton<AuthRepositoryImpl>(
+        () => AuthRepositoryImpl(baseUrl: ApiStrings.baseUrl),
+  );
+
   sl.registerLazySingleton(() => LoginUser(sl<AuthRepositoryImpl>()));
   sl.registerLazySingleton(() => RegisterUser(sl<AuthRepositoryImpl>()));
-  sl.registerFactory(() => AuthCubit(
-    sl<LoginUser>(),
-    sl<RegisterUser>(),
-    sl<AuthRepositoryImpl>(),
-  ));
-
+  sl.registerFactory(
+        () => AuthCubit(
+      sl<LoginUser>(),
+      sl<RegisterUser>(),
+      sl<AuthRepositoryImpl>(),
+    ),
+  );
   //========================================
   //              MEMBERS
   //========================================

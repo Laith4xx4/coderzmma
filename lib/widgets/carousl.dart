@@ -11,11 +11,11 @@ class Carousl extends StatefulWidget {
 
 class _CarouslState extends State<Carousl> {
   final List<Widget> products = [
-    Image.asset('assets/mma1.png', fit: BoxFit.cover),
-    Image.asset('assets/mma2.png', fit: BoxFit.cover),
-    Image.asset('assets/mma3.png', fit: BoxFit.cover),
+    Image.asset('assets/e2.png', fit: BoxFit.cover),
+    Image.asset('assets/e3.png', fit: BoxFit.cover),
+    Image.asset('assets/e4.png', fit: BoxFit.cover),
+    Image.asset('assets/e5.png', fit: BoxFit.cover),
     Image.asset('assets/mma4.png', fit: BoxFit.cover),
-    Image.asset('assets/mma5.png', fit: BoxFit.cover),
   ];
 
   final List<String> productNames = [

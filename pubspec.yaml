@@ -60,7 +60,7 @@ dependencies:
   jwt_decoder: ^2.0.1
   get_it: ^9.2.0
   google_nav_bar: ^5.0.7
-
+  shimmer: ^3.0.0
 
 
 
