@@ -28,8 +28,6 @@ class _PersonState extends State<Person> with AutomaticKeepAliveClientMixin {
   String displayName = "User";
   String userRole = "Member";
   bool isLoading = true;
-
-  // ✅ تخزين قيمة isAdmin
   bool _isAdmin = false;
 
   @override
@@ -38,7 +36,6 @@ class _PersonState extends State<Person> with AutomaticKeepAliveClientMixin {
   @override
   void initState() {
     super.initState();
-    // ✅ تأجيل كل العمليات لما بعد البناء الأول
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _initPage();
     });
@@ -51,44 +48,49 @@ class _PersonState extends State<Person> with AutomaticKeepAliveClientMixin {
     }
   }
 
+  // داخل ملف صفحة Person -> _PersonState
   Future<void> _loadLocalUserData() async {
     final prefs = await SharedPreferences.getInstance();
     if (!mounted) return;
 
-    final firstName = prefs.getString("firstName") ?? "";
-    final lastName = prefs.getString("lastName") ?? "";
-    final email = prefs.getString("userEmail") ?? "User";
-    final role = prefs.getString("userRole") ?? "Member";
+    // جلب البيانات مع وضع "layalasad" كقيمة افتراضية في حال وجودها
+    String? savedUserName = prefs.getString("userName");
+    String? savedFirstName = prefs.getString("firstName");
+    String? savedEmail = prefs.getString("userEmail");
 
     setState(() {
-      displayName = (firstName.isNotEmpty && firstName != "null")
-          ? "$firstName $lastName".trim()
-          : email;
-      userRole = role;
-      _isAdmin = role.toLowerCase() == 'admin';
+      // تحديد الاسم الذي سيظهر: نفضل userName ثم الاسم الأول ثم الإيميل
+      if (savedUserName != null && savedUserName.isNotEmpty) {
+        displayName = savedUserName;
+      } else if (savedFirstName != null && savedFirstName.isNotEmpty) {
+        displayName = savedFirstName;
+      } else if (savedEmail != null) {
+        displayName = savedEmail.split('@')[0]; // يأخذ الاسم من الإيميل
+      } else {
+        displayName = "Member";
+      }
+
+      userRole = prefs.getString("userRole") ?? "Admin";
+      _isAdmin = userRole.toLowerCase() == 'admin';
       isLoading = false;
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    super.build(context); // ✅ مطلوب لـ AutomaticKeepAliveClientMixin
+    super.build(context);
 
     return BlocListener<AuthCubit, AuthState>(
-      // ✅ الاستماع فقط عند النجاح
       listenWhen: (previous, current) => current is AuthSuccess,
       listener: (context, state) {
         if (state is AuthSuccess) {
-          final fName = state.user.firstName ?? "";
-          final newDisplayName = fName.isNotEmpty
-              ? "$fName ${state.user.lastName ?? ""}".trim()
-              : state.user.email;
+          // ✅ تحديث الاسم من الـ State في حال تغير في السيرفر
+          final name = state.user.userName ?? state.user.email;
           final newRole = state.user.role;
 
-          // ✅ تحديث فقط إذا تغيرت القيم
-          if (displayName != newDisplayName || userRole != newRole) {
+          if (displayName != name || userRole != newRole) {
             setState(() {
-              displayName = newDisplayName;
+              displayName = name;
               userRole = newRole;
               _isAdmin = newRole.toLowerCase() == 'admin';
             });
@@ -96,12 +98,11 @@ class _PersonState extends State<Person> with AutomaticKeepAliveClientMixin {
         }
       },
       child: Scaffold(
-        backgroundColor: const Color(0xFFF8F9FB),
+        backgroundColor: AppTheme.backgroundColor,
         body: isLoading
             ? const ShimmerEffect(isLoading: true, itemCount: 8)
             : CustomScrollView(
-          physics: const ClampingScrollPhysics(), // ✅ أخف من BouncingScrollPhysics
-          cacheExtent: 500, // ✅ تخزين مؤقت
+          physics: const ClampingScrollPhysics(),
           slivers: [
             _ProfileHeader(
               displayName: displayName,
@@ -157,313 +158,50 @@ class _PersonState extends State<Person> with AutomaticKeepAliveClientMixin {
       if (mounted) {
         Navigator.pushReplacement(
           context,
-          PageRouteBuilder(
-            pageBuilder: (_, __, ___) => const LoginScreen(),
-            transitionsBuilder: (_, animation, __, child) {
-              return FadeTransition(opacity: animation, child: child);
-            },
-          ),
+          MaterialPageRoute(builder: (_) => const LoginScreen()),
         );
       }
     }
   }
 }
 
-// ═══════════════════════════════════════════════════════════════
-// ✅ Header منفصل مع RepaintBoundary
-// ═══════════════════════════════════════════════════════════════
-
 class _ProfileHeader extends StatelessWidget {
   final String displayName;
   final String userRole;
 
-  const _ProfileHeader({
-    required this.displayName,
-    required this.userRole,
-  });
-
-  // ✅ ألوان ثابتة
-  static const _bgColor = Color(0xFF1A1A1A);
-  static const _gradientStart = Colors.black;
-  static final _gradientEnd = Colors.grey[900]!;
+  const _ProfileHeader({required this.displayName, required this.userRole});
 
   @override
   Widget build(BuildContext context) {
     return SliverAppBar(
-      expandedHeight: 260,
+      expandedHeight: 280,
       pinned: true,
       stretch: true,
       elevation: 0,
       automaticallyImplyLeading: false,
-      backgroundColor: _bgColor,
+      backgroundColor: AppTheme.primaryColor,
       flexibleSpace: FlexibleSpaceBar(
-        stretchModes: const [StretchMode.zoomBackground],
-        background: RepaintBoundary(
-          child: Container(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [_gradientStart, _gradientEnd],
-              ),
-            ),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const SizedBox(height: 20),
-                // ✅ صورة البروفايل
-                const _ProfileAvatar(),
-                const SizedBox(height: 15),
-                // ✅ اسم المستخدم
-                Text(
-                  displayName.toUpperCase(),
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                    letterSpacing: 1.2,
-                  ),
-                ),
-                const SizedBox(height: 10),
-                // ✅ شارة الدور
-                _RoleBadge(role: userRole),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-// ═══════════════════════════════════════════════════════════════
-// ✅ صورة البروفايل ثابتة
-// ═══════════════════════════════════════════════════════════════
-
-class _ProfileAvatar extends StatelessWidget {
-  const _ProfileAvatar();
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(3),
-      decoration: const BoxDecoration(
-        color: Colors.white24,
-        shape: BoxShape.circle,
-      ),
-      child: const CircleAvatar(
-        radius: 55,
-        backgroundImage: AssetImage('assets/4.jpg'),
-      ),
-    );
-  }
-}
-
-// ═══════════════════════════════════════════════════════════════
-// ✅ شارة الدور
-// ═══════════════════════════════════════════════════════════════
-
-class _RoleBadge extends StatelessWidget {
-  final String role;
-
-  const _RoleBadge({required this.role});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 6),
-      decoration: BoxDecoration(
-        color: Colors.black,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.white10),
-      ),
-      child: Text(
-        role.toUpperCase(),
-        style: const TextStyle(
-          color: Colors.white,
-          fontSize: 11,
-          fontWeight: FontWeight.w900,
-        ),
-      ),
-    );
-  }
-}
-
-// ═══════════════════════════════════════════════════════════════
-// ✅ عنوان القسم
-// ═══════════════════════════════════════════════════════════════
-
-class _SectionHeader extends StatelessWidget {
-  final String title;
-
-  const _SectionHeader({required this.title});
-
-  @override
-  Widget build(BuildContext context) {
-    return Text(
-      title,
-      style: const TextStyle(
-        fontSize: 11,
-        fontWeight: FontWeight.w900,
-        color: Color(0xFF9E9E9E), // ✅ لون ثابت بدلاً من Colors.grey[500]
-        letterSpacing: 1.2,
-      ),
-    );
-  }
-}
-
-// ═══════════════════════════════════════════════════════════════
-// ✅ قائمة الإجراءات السريعة
-// ═══════════════════════════════════════════════════════════════
-
-class _QuickActions extends StatelessWidget {
-  final bool isAdmin;
-  final void Function(Widget) onNavigate;
-
-  const _QuickActions({
-    required this.isAdmin,
-    required this.onNavigate,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: [
-        if (isAdmin) ...[
-          _ActionCard(
-            icon: Icons.people_alt_outlined,
-            title: 'Manage Members',
-            onTap: () => onNavigate(const MemberListPage()),
-          ),
-          _ActionCard(
-            icon: Icons.badge_outlined,
-            title: 'Manage Coaches',
-            onTap: () => onNavigate(const CoachListPage()),
-          ),
-          _ActionCard(
-            icon: Icons.category_outlined,
-            title: 'Class Types',
-            onTap: () => onNavigate(const ClassTypeListPage()),
-          ),
-        ],
-        _ActionCard(
-          icon: Icons.calendar_month_outlined,
-          title: 'Sessions',
-          onTap: () => onNavigate(const SessionListPage()),
-        ),
-        _ActionCard(
-          icon: Icons.fact_check_outlined,
-          title: 'Attendance',
-          onTap: () => onNavigate(const AttendanceListPage()),
-        ),
-        _ActionCard(
-          icon: Icons.confirmation_number_outlined,
-          title: 'Bookings',
-          onTap: () => onNavigate(const BookingListPage()),
-        ),
-        _ActionCard(
-          icon: Icons.insights_outlined,
-          title: 'Progress Stats',
-          onTap: () => onNavigate(const ProgressListPage()),
-        ),
-        _ActionCard(
-          icon: Icons.chat_bubble_outline_rounded,
-          title: 'Feedbacks',
-          onTap: () => onNavigate(const FeedbackListPage()),
-        ),
-      ],
-    );
-  }
-}
-
-// ═══════════════════════════════════════════════════════════════
-// ✅ بطاقة إجراء واحدة - محسّنة
-// ═══════════════════════════════════════════════════════════════
-
-class _ActionCard extends StatelessWidget {
-  final IconData icon;
-  final String title;
-  final VoidCallback onTap;
-
-  const _ActionCard({
-    required this.icon,
-    required this.title,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
-      child: Material(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(15),
-        // ✅ إزالة BoxShadow تماماً - أو استخدام border خفيف
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(15),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-            child: Row(
-              children: [
-                Icon(icon, color: Colors.black87, size: 24),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Text(
-                    title,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 14,
-                    ),
-                  ),
-                ),
-                const Icon(
-                  Icons.arrow_forward_ios_rounded,
-                  size: 14,
-                  color: Colors.grey,
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-// ═══════════════════════════════════════════════════════════════
-// ✅ زر تسجيل الخروج
-// ═══════════════════════════════════════════════════════════════
-
-class _LogoutButton extends StatelessWidget {
-  final VoidCallback onLogout;
-
-  const _LogoutButton({required this.onLogout});
-
-  // ✅ لون ثابت
-  static const _bgColor = Color(0x0DF44336); // 5% red
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: _bgColor,
-      borderRadius: BorderRadius.circular(15),
-      child: InkWell(
-        onTap: onLogout,
-        borderRadius: BorderRadius.circular(15),
-        child: const Padding(
-          padding: EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-          child: Row(
+        background: Container(
+          decoration: BoxDecoration(gradient: AppTheme.primaryGradient),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(Icons.logout_rounded, color: Colors.redAccent),
-              SizedBox(width: 16),
+              const SizedBox(height: 50),
+              const _ProfileAvatar(),
+              const SizedBox(height: 16),
+              // ✅ عرض الاسم بخط عريض وواضح
+              // داخل كود _ProfileHeader
               Text(
-                'Logout',
-                style: TextStyle(
-                  color: Colors.redAccent,
+                displayName.trim().isEmpty ? "GUEST USER" : displayName.toUpperCase(),
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 20,
                   fontWeight: FontWeight.bold,
+                  letterSpacing: 1.2,
                 ),
               ),
+              const SizedBox(height: 10),
+              _RoleBadge(role: userRole),
             ],
           ),
         ),
@@ -472,9 +210,176 @@ class _LogoutButton extends StatelessWidget {
   }
 }
 
-// ═══════════════════════════════════════════════════════════════
-// ✅ Dialog تسجيل الخروج
-// ═══════════════════════════════════════════════════════════════
+class _ProfileAvatar extends StatelessWidget {
+  const _ProfileAvatar();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(4),
+      decoration: BoxDecoration(
+        border: Border.all(color: Colors.white24, width: 2),
+        shape: BoxShape.circle,
+      ),
+      child: CircleAvatar(
+        radius: 55,
+        backgroundColor: AppTheme.primaryLight,
+        // ✅ صورة افتراضية فخمة في حال عدم وجود صورة شخصية
+        child: const Icon(Icons.person_rounded, color: Colors.white, size: 50),
+      ),
+    );
+  }
+}
+
+class _RoleBadge extends StatelessWidget {
+  final String role;
+  const _RoleBadge({required this.role});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 6),
+      decoration: BoxDecoration(
+        color: AppTheme.infoColor.withOpacity(0.2),
+        borderRadius: BorderRadius.circular(30),
+        border: Border.all(color: AppTheme.infoColor.withOpacity(0.5)),
+      ),
+      child: Text(
+        role.toUpperCase(),
+        style: const TextStyle(
+          color: AppTheme.infoColor,
+          fontSize: 12,
+          fontWeight: FontWeight.w900,
+        ),
+      ),
+    );
+  }
+}
+
+class _SectionHeader extends StatelessWidget {
+  final String title;
+  const _SectionHeader({required this.title});
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(
+      title,
+      style: AppTheme.bodySmall.copyWith(
+        fontWeight: FontWeight.w900,
+        letterSpacing: 1.5,
+        color: AppTheme.textLight,
+      ),
+    );
+  }
+}
+
+class _QuickActions extends StatelessWidget {
+  final bool isAdmin;
+  final void Function(Widget) onNavigate;
+
+  const _QuickActions({required this.isAdmin, required this.onNavigate});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        if (isAdmin) ...[
+          _ActionCard(
+            icon: Icons.people_alt_rounded,
+            title: 'Manage Members',
+            onTap: () => onNavigate(const MemberListPage()),
+          ),
+          _ActionCard(
+            icon: Icons.badge_rounded,
+            title: 'Manage Coaches',
+            onTap: () => onNavigate(const CoachListPage()),
+          ),
+          _ActionCard(
+            icon: Icons.category_rounded,
+            title: 'Class Types',
+            onTap: () => onNavigate(const ClassTypeListPage()),
+          ),
+        ],
+        _ActionCard(
+          icon: Icons.calendar_today_rounded,
+          title: 'Sessions',
+          onTap: () => onNavigate(const SessionListPage()),
+        ),
+        _ActionCard(
+          icon: Icons.assignment_turned_in_rounded,
+          title: 'Attendance',
+          onTap: () => onNavigate(const AttendanceListPage()),
+        ),
+        _ActionCard(
+          icon: Icons.bookmark_added_rounded,
+          title: 'Bookings',
+          onTap: () => onNavigate(const BookingListPage()),
+        ),
+        _ActionCard(
+          icon: Icons.bar_chart_rounded,
+          title: 'Progress Stats',
+          onTap: () => onNavigate(const ProgressListPage()),
+        ),
+        _ActionCard(
+          icon: Icons.rate_review_rounded,
+          title: 'Feedbacks',
+          onTap: () => onNavigate(const FeedbackListPage()),
+        ),
+      ],
+    );
+  }
+}
+
+class _ActionCard extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final VoidCallback onTap;
+
+  const _ActionCard({required this.icon, required this.title, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      decoration: AppTheme.cardDecoration(),
+      child: ListTile(
+        onTap: onTap,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium)),
+        leading: Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: AppTheme.backgroundColor,
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Icon(icon, color: AppTheme.primaryColor, size: 22),
+        ),
+        title: Text(title, style: AppTheme.bodyMedium.copyWith(fontWeight: FontWeight.w700)),
+        trailing: const Icon(Icons.chevron_right_rounded, size: 20, color: AppTheme.textLight),
+      ),
+    );
+  }
+}
+
+class _LogoutButton extends StatelessWidget {
+  final VoidCallback onLogout;
+  const _LogoutButton({required this.onLogout});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: AppTheme.cardDecoration(color: AppTheme.errorColor.withOpacity(0.08)),
+      child: ListTile(
+        onTap: onLogout,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium)),
+        leading: const Icon(Icons.logout_rounded, color: AppTheme.errorColor),
+        title: Text(
+          'Logout Account',
+          style: AppTheme.bodyMedium.copyWith(color: AppTheme.errorColor, fontWeight: FontWeight.w900),
+        ),
+      ),
+    );
+  }
+}
 
 class _LogoutDialog extends StatelessWidget {
   const _LogoutDialog();
@@ -482,20 +387,22 @@ class _LogoutDialog extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      title: const Text('Logout'),
-      content: const Text('Are you sure?'),
+      backgroundColor: AppTheme.cardBackground,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppTheme.borderRadiusLarge)),
+      title: Text('Sign Out', style: AppTheme.heading3),
+      content: Text('Are you sure you want to exit your profile?', style: AppTheme.bodyMedium),
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context, false),
-          child: const Text('Cancel'),
+          child: Text('Cancel', style: AppTheme.bodyMedium.copyWith(color: AppTheme.textSecondary)),
         ),
-        TextButton(
-          onPressed: () => Navigator.pop(context, true),
-          child: const Text(
-            'Logout',
-            style: TextStyle(color: Colors.red),
+        ElevatedButton(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: AppTheme.errorColor,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppTheme.borderRadiusSmall)),
           ),
+          onPressed: () => Navigator.pop(context, true),
+          child: const Text('Logout', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
         ),
       ],
     );

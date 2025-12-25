@@ -3,7 +3,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:maa3/core/role_helper.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:maa3/core/app_theme.dart';
-// import 'package:maa3/core/helpers/role_helper.dart';
 import 'package:maa3/widgets/modern_card.dart';
 import 'package:maa3/features/feedbacks/domain/entities/feedback_entity.dart';
 import 'package:maa3/features/feedbacks/data/models/create_feedback_model.dart';
@@ -25,9 +24,9 @@ class FeedbackListPage extends StatefulWidget {
 }
 
 class _FeedbackListPageState extends State<FeedbackListPage> {
-  // ✅ متغيرات الصلاحيات
   String _currentUserRole = '';
   int? _currentUserId;
+  String? _currentUserName;
   bool _isAdmin = false;
   bool _isCoach = false;
   bool _isMember = false;
@@ -39,22 +38,27 @@ class _FeedbackListPageState extends State<FeedbackListPage> {
     _loadUserRoleAndData();
   }
 
-  /// ✅ تحميل دور المستخدم والبيانات
   Future<void> _loadUserRoleAndData() async {
     final prefs = await SharedPreferences.getInstance();
 
-
     _currentUserRole = await RoleHelper.getCurrentUserRole();
-    _currentUserId = prefs.getInt('userId');
     _isAdmin = await RoleHelper.isAdmin();
     _isCoach = await RoleHelper.isCoach();
     _isMember = await RoleHelper.isMember();
 
-    setState(() {
-      _isLoading = false;
-    });
+    // جلب الـ ID بأكثر من طريقة
+    _currentUserId = prefs.getInt('userId');
+    if (_currentUserId == null) {
+      String? idString = prefs.getString('userId');
+      if (idString != null) {
+        _currentUserId = int.tryParse(idString);
+      }
+    }
 
-    // تحميل البيانات
+    _currentUserName = prefs.getString('userName') ?? 'My Account';
+
+    setState(() => _isLoading = false);
+
     if (mounted) {
       context.read<FeedbackCubit>().loadFeedbacks();
       context.read<MemberCubit>().loadMembers();
@@ -63,39 +67,23 @@ class _FeedbackListPageState extends State<FeedbackListPage> {
     }
   }
 
-  /// ✅ فلترة الفيدباك حسب الصلاحيات
   List<FeedbackEntity> _filterFeedbacksByRole(List<FeedbackEntity> feedbacks) {
-    if (_isAdmin) {
-      // Admin يرى كل الفيدباك
-      return feedbacks;
-    } else if (_isCoach) {
-      // Coach يرى الفيدباك الموجه له فقط
+    if (_isAdmin) return feedbacks;
+    if (_isCoach) {
       return feedbacks.where((f) => f.coachId == _currentUserId).toList();
-    } else {
-      // Member يرى الفيدباك الخاص به فقط
-      return feedbacks.where((f) => f.memberId == _currentUserId).toList();
     }
+    return feedbacks.where((f) => f.memberId == _currentUserId).toList();
   }
 
-  /// ✅ التحقق من إمكانية تعديل الفيدباك
   bool _canEditFeedback(FeedbackEntity feedback) {
-    if (_isAdmin) return true;
-    if (_isMember && feedback.memberId == _currentUserId) return true;
-    return false;
+    return _isAdmin || (_isMember && feedback.memberId == _currentUserId);
   }
 
-  /// ✅ التحقق من إمكانية حذف الفيدباك
   bool _canDeleteFeedback(FeedbackEntity feedback) {
-    if (_isAdmin) return true;
-    if (_isMember && feedback.memberId == _currentUserId) return true;
-    return false;
+    return _isAdmin || (_isMember && feedback.memberId == _currentUserId);
   }
 
-  /// ✅ التحقق من إمكانية إضافة فيدباك
-  bool _canAddFeedback() {
-    // الكل يمكنه إضافة فيدباك
-    return true;
-  }
+  bool _canAddFeedback() => _isMember || _isCoach || _isAdmin;
 
   @override
   Widget build(BuildContext context) {
@@ -104,10 +92,7 @@ class _FeedbackListPageState extends State<FeedbackListPage> {
         backgroundColor: AppTheme.backgroundColor,
         appBar: AppBar(
           backgroundColor: AppTheme.primaryColor,
-          title: const Text(
-            'Feedbacks',
-            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-          ),
+          title: const Text('Feedbacks', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
         ),
         body: const Center(child: CircularProgressIndicator()),
       );
@@ -117,34 +102,22 @@ class _FeedbackListPageState extends State<FeedbackListPage> {
       backgroundColor: AppTheme.backgroundColor,
       appBar: AppBar(
         backgroundColor: AppTheme.primaryColor,
+        iconTheme: const IconThemeData(color: Colors.white),
         title: Row(
           children: [
-            const Text(
-              'Feedbacks',
-              style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-            ),
+            const Text('Feedbacks', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
             const Spacer(),
-            // ✅ عرض دور المستخدم
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
               decoration: BoxDecoration(
                 color: Colors.white.withOpacity(0.2),
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: Text(
-                _currentUserRole,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
+              child: Text(_currentUserRole, style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w500)),
             ),
           ],
         ),
-        elevation: 0,
       ),
-      // ✅ FAB حسب الصلاحيات
       floatingActionButton: _canAddFeedback()
           ? FloatingActionButton(
         onPressed: () => _showAddFeedbackDialog(context),
@@ -155,30 +128,17 @@ class _FeedbackListPageState extends State<FeedbackListPage> {
       body: BlocConsumer<FeedbackCubit, FeedbackState>(
         listener: (context, state) {
           if (state is FeedbackOperationSuccess) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(state.message),
-                backgroundColor: Colors.green,
-              ),
-            );
+            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(state.message), backgroundColor: Colors.green));
           } else if (state is FeedbackError) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text('Error: ${state.message}'),
-                backgroundColor: Colors.red,
-              ),
-            );
+            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: ${state.message}'), backgroundColor: Colors.red));
           }
         },
         builder: (context, state) {
-          if (state is FeedbackInitial || state is FeedbackLoading) {
+          if (state is FeedbackLoading || state is FeedbackInitial) {
             return const Center(child: CircularProgressIndicator());
           }
-
           if (state is FeedbacksLoaded) {
-            // ✅ فلترة حسب الصلاحيات
             final filteredFeedbacks = _filterFeedbacksByRole(state.feedbacks);
-
             if (filteredFeedbacks.isEmpty) {
               return Center(
                 child: Column(
@@ -186,28 +146,13 @@ class _FeedbackListPageState extends State<FeedbackListPage> {
                   children: [
                     const Icon(Icons.feedback_outlined, size: 64, color: Colors.grey),
                     const SizedBox(height: 16),
-                    Text(
-                      _isAdmin
-                          ? 'No feedback found.'
-                          : 'No feedback available for you.',
-                      style: const TextStyle(fontSize: 18, color: Colors.grey),
-                    ),
-                    if (_isMember) ...[
-                      const SizedBox(height: 8),
-                      const Text(
-                        'Add your first feedback!',
-                        style: TextStyle(fontSize: 14, color: Colors.grey),
-                      ),
-                    ],
+                    Text(_isAdmin ? 'No feedback found.' : 'No feedback available for you.', style: const TextStyle(fontSize: 18, color: Colors.grey)),
                   ],
                 ),
               );
             }
-
             return RefreshIndicator(
-              onRefresh: () async {
-                context.read<FeedbackCubit>().loadFeedbacks();
-              },
+              onRefresh: () async => context.read<FeedbackCubit>().loadFeedbacks(),
               child: ListView.builder(
                 padding: const EdgeInsets.all(16),
                 itemCount: filteredFeedbacks.length,
@@ -215,13 +160,8 @@ class _FeedbackListPageState extends State<FeedbackListPage> {
                   final item = filteredFeedbacks[index];
                   return FeedbackCard(
                     item: item,
-                    // ✅ إظهار أزرار التعديل والحذف حسب الصلاحيات
-                    onEdit: _canEditFeedback(item)
-                        ? () => _showEditFeedbackDialog(context, item)
-                        : null,
-                    onDelete: _canDeleteFeedback(item)
-                        ? () => _showDeleteDialog(context, item.id)
-                        : null,
+                    onEdit: _canEditFeedback(item) ? () => _showEditFeedbackDialog(context, item) : null,
+                    onDelete: _canDeleteFeedback(item) ? () => _showDeleteDialog(context, item.id) : null,
                     showOwnerBadge: _isAdmin,
                     isOwnFeedback: item.memberId == _currentUserId,
                   );
@@ -229,170 +169,278 @@ class _FeedbackListPageState extends State<FeedbackListPage> {
               ),
             );
           }
-
-          if (state is FeedbackError) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(Icons.error_outline, size: 64, color: Colors.red),
-                  const SizedBox(height: 16),
-                  Text(
-                    'Failed to load feedback.\nError: ${state.message}',
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(color: Colors.red),
-                  ),
-                  const SizedBox(height: 16),
-                  ElevatedButton(
-                    onPressed: () => context.read<FeedbackCubit>().loadFeedbacks(),
-                    child: const Text('Retry'),
-                  ),
-                ],
-              ),
-            );
-          }
-
           return const Center(child: Text('Something went wrong.'));
         },
       ),
     );
   }
 
+  // ================== Add Feedback Dialog ==================
   void _showAddFeedbackDialog(BuildContext context) {
-    final _formKey = GlobalKey<FormState>();
+    final formKey = GlobalKey<FormState>();
+    final commentsController = TextEditingController();
+
+    // جلب القوائم
     final membersState = context.read<MemberCubit>().state;
     final coachesState = context.read<CoachCubit>().state;
     final sessionsState = context.read<SessionCubit>().state;
 
-    List<dynamic> members = [];
-    List<dynamic> coaches = [];
-    List<dynamic> sessions = [];
+    final members = membersState is MembersLoaded ? membersState.members : [];
+    final coaches = coachesState is CoachesLoaded ? coachesState.coaches : [];
+    final sessions = sessionsState is SessionsLoaded ? sessionsState.sessions : [];
 
-    if (membersState is MembersLoaded) {
-      members = membersState.members;
-    }
-    if (coachesState is CoachesLoaded) {
-      coaches = coachesState.coaches;
-    }
-    if (sessionsState is SessionsLoaded) {
-      sessions = sessionsState.sessions;
+    // التحقق من توفر Sessions (مطلوب لجميع الأدوار)
+    if (sessions.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No sessions available. Please add sessions first.'), backgroundColor: Colors.orange),
+      );
+      return;
     }
 
-    final TextEditingController _commentsController = TextEditingController();
-
-    // ✅ للعضو: تعيين memberId تلقائياً
-    int? selectedMemberId = _isMember ? _currentUserId : null;
+    // تحديد القيم الافتراضية بناءً على الدور
+    int? selectedMemberId;
     int? selectedCoachId;
-    int? selectedSessionId;
-    double rating = 5.0;
+    
+    if (_isMember) {
+      // Member: يختار Coach و Session فقط
+      selectedMemberId = _currentUserId;
+      if (selectedMemberId == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Error: Member ID not found. Please login again.'), backgroundColor: Colors.red),
+        );
+        return;
+      }
+      if (coaches.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('No coaches available. Please add coaches first.'), backgroundColor: Colors.orange),
+        );
+        return;
+      }
+      selectedCoachId = coaches.first.id;
+    } else if (_isCoach) {
+      // Coach: يختار Member و Session فقط
+      selectedCoachId = _currentUserId;
+      if (selectedCoachId == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Error: Coach ID not found. Please login again.'), backgroundColor: Colors.red),
+        );
+        return;
+      }
+      if (members.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('No members available. Please add members first.'), backgroundColor: Colors.orange),
+        );
+        return;
+      }
+      selectedMemberId = members.first.id;
+    } else if (_isAdmin) {
+      // Admin: يختار الكل
+      if (members.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('No members available. Please add members first.'), backgroundColor: Colors.orange),
+        );
+        return;
+      }
+      if (coaches.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('No coaches available. Please add coaches first.'), backgroundColor: Colors.orange),
+        );
+        return;
+      }
+      selectedMemberId = members.first.id;
+      selectedCoachId = coaches.first.id;
+    }
+
+    int? selectedSessionId = sessions.first.id;
+    double rating = 3.0;
 
     showDialog(
       context: context,
-      builder: (context) {
+      barrierDismissible: false,
+      builder: (dialogContext) {
         return StatefulBuilder(
-          builder: (context, setState) {
+          builder: (context, setStateDialog) {
             return AlertDialog(
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
               title: Row(
                 children: [
                   const Text('Add Feedback'),
                   const Spacer(),
-                  // ✅ عرض دور المستخدم في الحوار
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                    decoration: BoxDecoration(
-                      color: AppTheme.primaryColor.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Text(
-                      _currentUserRole,
-                      style: TextStyle(
-                        fontSize: 10,
-                        color: AppTheme.primaryColor,
-                      ),
-                    ),
+                    decoration: BoxDecoration(color: AppTheme.primaryColor.withOpacity(0.1), borderRadius: BorderRadius.circular(12)),
+                    child: Text(_currentUserRole, style: TextStyle(fontSize: 10, color: AppTheme.primaryColor, fontWeight: FontWeight.bold)),
                   ),
                 ],
               ),
               content: Form(
-                key: _formKey,
+                key: formKey,
                 child: SingleChildScrollView(
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      // ✅ إظهار dropdown العضو فقط للـ Admin
-                      if (_isAdmin)
+                      // =============== Member Field ===============
+                      if (_isAdmin || _isCoach)
                         DropdownButtonFormField<int>(
-                          decoration: const InputDecoration(labelText: 'Member *'),
-                          items: members.map<DropdownMenuItem<int>>((member) {
-                            return DropdownMenuItem<int>(
-                              value: member.id,
-                              child: Text(member.userName),
+                          value: selectedMemberId,
+                          decoration: const InputDecoration(
+                            labelText: 'Member *',
+                            border: OutlineInputBorder(),
+                          ),
+                          items: members.map<DropdownMenuItem<int>>((m) {
+                            return DropdownMenuItem(
+                              value: m.id,
+                              child: Text(m.userName ?? 'Member ${m.id}'),
                             );
                           }).toList(),
-                          onChanged: (value) => selectedMemberId = value,
-                          validator: (value) => value == null ? 'Select a member' : null,
+                          onChanged: (v) => setStateDialog(() => selectedMemberId = v),
+                          validator: (v) => v == null ? 'Select a member' : null,
                         )
-                      else
-                      // ✅ للعضو: عرض اسمه فقط
-                        Container(
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: Colors.grey.shade100,
-                            borderRadius: BorderRadius.circular(8),
+                      else if (_isMember)
+                        InputDecorator(
+                          decoration: InputDecoration(
+                            labelText: 'Member',
+                            filled: true,
+                            fillColor: Colors.grey.shade200,
+                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(4)),
+                            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
                           ),
                           child: Row(
                             children: [
-                              const Icon(Icons.person, color: Colors.grey),
+                              const Icon(Icons.person, size: 20, color: Colors.grey),
                               const SizedBox(width: 8),
-                              Text(
-                                'Feedback from: You',
-                                style: TextStyle(color: Colors.grey.shade700),
+                              Expanded(
+                                child: Text(
+                                  _currentUserName ?? 'My Account',
+                                  style: TextStyle(color: Colors.grey.shade800, fontWeight: FontWeight.w600),
+                                ),
                               ),
+                              const Icon(Icons.lock, size: 16, color: Colors.grey),
                             ],
                           ),
                         ),
+
                       const SizedBox(height: 16),
+
+                      // =============== Coach Dropdown ===============
+                      if (_isAdmin || _isMember)
+                        DropdownButtonFormField<int>(
+                          value: selectedCoachId,
+                          decoration: const InputDecoration(
+                            labelText: 'Coach *',
+                            border: OutlineInputBorder(),
+                          ),
+                          items: coaches.map<DropdownMenuItem<int>>((c) {
+                            return DropdownMenuItem(
+                              value: c.id,
+                              child: Text(c.userName ?? 'Coach ${c.id}'),
+                            );
+                          }).toList(),
+                          onChanged: (v) => setStateDialog(() => selectedCoachId = v),
+                          validator: (v) => v == null ? 'Select a coach' : null,
+                        )
+                      else if (_isCoach)
+                        InputDecorator(
+                          decoration: InputDecoration(
+                            labelText: 'Coach',
+                            filled: true,
+                            fillColor: Colors.grey.shade200,
+                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(4)),
+                            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
+                          ),
+                          child: Row(
+                            children: [
+                              const Icon(Icons.sports, size: 20, color: Colors.grey),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  _currentUserName ?? 'My Account',
+                                  style: TextStyle(color: Colors.grey.shade800, fontWeight: FontWeight.w600),
+                                ),
+                              ),
+                              const Icon(Icons.lock, size: 16, color: Colors.grey),
+                            ],
+                          ),
+                        ),
+
+                      const SizedBox(height: 16),
+
+                      // =============== Session Dropdown ===============
                       DropdownButtonFormField<int>(
-                        decoration: const InputDecoration(labelText: 'Coach *'),
-                        items: coaches.map<DropdownMenuItem<int>>((coach) {
-                          return DropdownMenuItem<int>(
-                            value: coach.id,
-                            child: Text(coach.userName),
+                        value: selectedSessionId,
+                        decoration: const InputDecoration(
+                          labelText: 'Session *',
+                          border: OutlineInputBorder(),
+                        ),
+                        items: sessions.map<DropdownMenuItem<int>>((s) {
+                          return DropdownMenuItem(
+                            value: s.id,
+                            child: Text('Session #${s.id} - ${s.classTypeName}'),
                           );
                         }).toList(),
-                        onChanged: (value) => selectedCoachId = value,
-                        validator: (value) => value == null ? 'Select a coach' : null,
+                        onChanged: (v) => setStateDialog(() => selectedSessionId = v),
+                        validator: (v) => v == null ? 'Select a session' : null,
                       ),
-                      const SizedBox(height: 16),
-                      DropdownButtonFormField<int>(
-                        decoration: const InputDecoration(labelText: 'Session *'),
-                        items: sessions.map<DropdownMenuItem<int>>((session) {
-                          return DropdownMenuItem<int>(
-                            value: session.id,
-                            child: Text('Session #${session.id}'),
-                          );
-                        }).toList(),
-                        onChanged: (value) => selectedSessionId = value,
-                        validator: (value) => value == null ? 'Select a session' : null,
+
+                      const SizedBox(height: 24),
+
+                      // =============== Rating ===============
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: AppTheme.primaryColor.withOpacity(0.05),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Column(
+                          children: [
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                const Text('Rating:', style: TextStyle(fontWeight: FontWeight.bold)),
+                                Text(
+                                  '${rating.toStringAsFixed(1)} / 5.0',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 16,
+                                    color: AppTheme.primaryColor,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            Slider(
+                              value: rating,
+                              min: 1.0,
+                              max: 5.0,
+                              divisions: 8,
+                              label: rating.toStringAsFixed(1),
+                              activeColor: AppTheme.primaryColor,
+                              onChanged: (v) => setStateDialog(() => rating = v),
+                            ),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: List.generate(
+                                5,
+                                    (index) => Icon(
+                                  index < rating.round() ? Icons.star : Icons.star_border,
+                                  color: AppTheme.primaryColor,
+                                  size: 24,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
+
                       const SizedBox(height: 16),
-                      Text('Rating: ${rating.toStringAsFixed(1)}'),
-                      Slider(
-                        value: rating,
-                        min: 1.0,
-                        max: 5.0,
-                        divisions: 4,
-                        label: rating.toStringAsFixed(1),
-                        onChanged: (value) {
-                          setState(() {
-                            rating = value;
-                          });
-                        },
-                      ),
-                      const SizedBox(height: 16),
+
+                      // =============== Comments ===============
                       TextFormField(
-                        controller: _commentsController,
-                        decoration: const InputDecoration(labelText: 'Comments (Optional)'),
+                        controller: commentsController,
+                        decoration: const InputDecoration(
+                          labelText: 'Comments (Optional)',
+                          border: OutlineInputBorder(),
+                          hintText: 'Share your feedback...',
+                        ),
                         maxLines: 3,
                       ),
                     ],
@@ -401,31 +449,46 @@ class _FeedbackListPageState extends State<FeedbackListPage> {
               ),
               actions: [
                 TextButton(
-                  onPressed: () => Navigator.pop(context),
+                  onPressed: () => Navigator.pop(dialogContext),
                   child: const Text('Cancel'),
                 ),
                 ElevatedButton(
                   onPressed: () {
-                    if (_formKey.currentState!.validate() &&
-                        selectedMemberId != null &&
-                        selectedCoachId != null &&
-                        selectedSessionId != null) {
+                    if (formKey.currentState!.validate()) {
+                      if (selectedMemberId == null) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Error: Member ID is required')),
+                        );
+                        return;
+                      }
+
+                      if (selectedCoachId == null) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Error: Coach ID is required')),
+                        );
+                        return;
+                      }
+
                       context.read<FeedbackCubit>().createFeedbackAction(
                         CreateFeedbackModel(
                           memberId: selectedMemberId!,
                           coachId: selectedCoachId!,
                           sessionId: selectedSessionId!,
                           rating: rating,
-                          comments: _commentsController.text.isEmpty
+                          comments: commentsController.text.trim().isEmpty
                               ? null
-                              : _commentsController.text,
+                              : commentsController.text.trim(),
                           timestamp: DateTime.now(),
                         ),
                       );
-                      Navigator.pop(context);
+                      Navigator.pop(dialogContext);
                     }
                   },
-                  child: const Text('Add'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppTheme.primaryColor,
+                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                  ),
+                  child: const Text('Add Feedback', style: TextStyle(color: Colors.white)),
                 ),
               ],
             );
@@ -435,112 +498,112 @@ class _FeedbackListPageState extends State<FeedbackListPage> {
     );
   }
 
+  // ================== Edit Dialog ==================
   void _showEditFeedbackDialog(BuildContext context, FeedbackEntity item) {
-    final _formKey = GlobalKey<FormState>();
-    final TextEditingController _commentsController =
-    TextEditingController(text: item.comments ?? '');
+    final formKey = GlobalKey<FormState>();
+    final commentsController = TextEditingController(text: item.comments ?? '');
     double rating = item.rating;
 
     showDialog(
       context: context,
-      builder: (context) {
-        return StatefulBuilder(
-          builder: (context, setState) {
-            return AlertDialog(
-              title: const Text('Edit Feedback'),
-              content: Form(
-                key: _formKey,
-                child: SingleChildScrollView(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      // ✅ عرض معلومات الفيدباك
-                      Container(
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: Colors.grey.shade100,
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Column(
+      builder: (context) => StatefulBuilder(
+        builder: (context, setStateDialog) => AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          title: const Text('Edit Feedback'),
+          content: Form(
+            key: formKey,
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  _buildInfoRow('Member', item.memberName),
+                  const SizedBox(height: 4),
+                  _buildInfoRow('Coach', item.coachName),
+                  const SizedBox(height: 4),
+                  _buildInfoRow('Session', item.sessionName),
+                  const SizedBox(height: 16),
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: AppTheme.primaryColor.withOpacity(0.05),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Column(
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            _buildInfoRow('Member', item.memberName),
-                            const SizedBox(height: 4),
-                            _buildInfoRow('Coach', item.coachName),
-                            const SizedBox(height: 4),
-                            _buildInfoRow('Session', item.sessionName),
+                            const Text('Rating:', style: TextStyle(fontWeight: FontWeight.bold)),
+                            Text(
+                              '${rating.toStringAsFixed(1)} / 5.0',
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16,
+                                color: AppTheme.primaryColor,
+                              ),
+                            ),
                           ],
                         ),
-                      ),
-                      const SizedBox(height: 16),
-                      Text('Rating: ${rating.toStringAsFixed(1)}'),
-                      Slider(
-                        value: rating,
-                        min: 1.0,
-                        max: 5.0,
-                        divisions: 4,
-                        label: rating.toStringAsFixed(1),
-                        onChanged: (value) {
-                          setState(() {
-                            rating = value;
-                          });
-                        },
-                      ),
-                      const SizedBox(height: 16),
-                      TextFormField(
-                        controller: _commentsController,
-                        decoration: const InputDecoration(labelText: 'Comments'),
-                        maxLines: 3,
-                      ),
-                    ],
+                        Slider(
+                          value: rating,
+                          min: 1.0,
+                          max: 5.0,
+                          divisions: 8,
+                          label: rating.toStringAsFixed(1),
+                          activeColor: AppTheme.primaryColor,
+                          onChanged: (v) => setStateDialog(() => rating = v),
+                        ),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: List.generate(
+                            5,
+                                (index) => Icon(
+                              index < rating.round() ? Icons.star : Icons.star_border,
+                              color: AppTheme.primaryColor,
+                              size: 24,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                ),
+                  const SizedBox(height: 16),
+                  TextFormField(
+                    controller: commentsController,
+                    decoration: const InputDecoration(
+                      labelText: 'Comments',
+                      border: OutlineInputBorder(),
+                    ),
+                    maxLines: 3,
+                  ),
+                ],
               ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(context),
-                  child: const Text('Cancel'),
-                ),
-                ElevatedButton(
-                  onPressed: () {
-                    context.read<FeedbackCubit>().updateFeedbackAction(
-                      item.id,
-                      UpdateFeedbackModel(
-                        rating: rating,
-                        comments: _commentsController.text.isEmpty
-                            ? null
-                            : _commentsController.text,
-                      ),
-                    );
-                    Navigator.pop(context);
-                  },
-                  child: const Text('Update'),
-                ),
-              ],
-            );
-          },
-        );
-      },
-    );
-  }
-
-  Widget _buildInfoRow(String label, String value) {
-    return Row(
-      children: [
-        Text(
-          '$label: ',
-          style: const TextStyle(
-            fontWeight: FontWeight.bold,
-            fontSize: 12,
+            ),
           ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                context.read<FeedbackCubit>().updateFeedbackAction(
+                  item.id,
+                  UpdateFeedbackModel(
+                    rating: rating,
+                    comments: commentsController.text.trim(),
+                  ),
+                );
+                Navigator.pop(context);
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppTheme.primaryColor,
+              ),
+              child: const Text('Update', style: TextStyle(color: Colors.white)),
+            ),
+          ],
         ),
-        Expanded(
-          child: Text(
-            value,
-            style: const TextStyle(fontSize: 12),
-            overflow: TextOverflow.ellipsis,
-          ),
-        ),
-      ],
+      ),
     );
   }
 
@@ -548,8 +611,15 @@ class _FeedbackListPageState extends State<FeedbackListPage> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Delete Feedback'),
-        content: const Text('Are you sure you want to delete this feedback?'),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Row(
+          children: [
+            Icon(Icons.warning_rounded, color: AppTheme.errorColor),
+            const SizedBox(width: 8),
+            const Text('Delete Feedback'),
+          ],
+        ),
+        content: const Text('Are you sure you want to delete this feedback? This action cannot be undone.'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
@@ -567,9 +637,30 @@ class _FeedbackListPageState extends State<FeedbackListPage> {
       ),
     );
   }
+
+  Widget _buildInfoRow(String label, String value) {
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        children: [
+          Text(
+            '$label: ',
+            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Colors.grey),
+          ),
+          Expanded(
+            child: Text(
+              value,
+              style: const TextStyle(fontSize: 12),
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
-// ✅ تحديث FeedbackCard لدعم الصلاحيات
+// ================== FeedbackCard ==================
 class FeedbackCard extends StatelessWidget {
   final FeedbackEntity item;
   final VoidCallback? onEdit;
@@ -601,18 +692,11 @@ class FeedbackCard extends StatelessWidget {
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
-                    colors: [
-                      ratingColor.withOpacity(0.2),
-                      ratingColor.withOpacity(0.1),
-                    ],
+                    colors: [ratingColor.withOpacity(0.2), ratingColor.withOpacity(0.1)],
                   ),
                   borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
                 ),
-                child: Icon(
-                  Icons.feedback,
-                  color: ratingColor,
-                  size: 24,
-                ),
+                child: Icon(Icons.feedback, color: ratingColor, size: 24),
               ),
               const SizedBox(width: AppTheme.spacingMD),
               Expanded(
@@ -629,14 +713,10 @@ class FeedbackCard extends StatelessWidget {
                             overflow: TextOverflow.ellipsis,
                           ),
                         ),
-                        // ✅ Badge للفيدباك الخاص بالمستخدم
                         if (isOwnFeedback)
                           Container(
                             margin: const EdgeInsets.only(left: 8),
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 8,
-                              vertical: 2,
-                            ),
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                             decoration: BoxDecoration(
                               color: AppTheme.primaryColor.withOpacity(0.1),
                               borderRadius: BorderRadius.circular(8),
@@ -653,10 +733,7 @@ class FeedbackCard extends StatelessWidget {
                       ],
                     ),
                     const SizedBox(height: 4),
-                    Text(
-                      item.sessionName,
-                      style: AppTheme.bodyMedium,
-                    ),
+                    Text(item.sessionName, style: AppTheme.bodyMedium),
                   ],
                 ),
               ),
@@ -674,18 +751,17 @@ class FeedbackCard extends StatelessWidget {
               children: [
                 Row(
                   children: [
-                    ...List.generate(5, (index) {
-                      return Padding(
+                    ...List.generate(
+                      5,
+                          (index) => Padding(
                         padding: const EdgeInsets.only(right: 2),
                         child: Icon(
-                          index < item.rating.round()
-                              ? Icons.star
-                              : Icons.star_border,
+                          index < item.rating.round() ? Icons.star : Icons.star_border,
                           size: 20,
                           color: ratingColor,
                         ),
-                      );
-                    }),
+                      ),
+                    ),
                     const SizedBox(width: 12),
                     Text(
                       '${item.rating.toStringAsFixed(1)}/5.0',
@@ -698,16 +774,9 @@ class FeedbackCard extends StatelessWidget {
                 ),
                 Row(
                   children: [
-                    Icon(
-                      Icons.calendar_today,
-                      size: 16,
-                      color: AppTheme.textSecondary,
-                    ),
+                    Icon(Icons.calendar_today, size: 16, color: AppTheme.textSecondary),
                     const SizedBox(width: 4),
-                    Text(
-                      date,
-                      style: AppTheme.bodySmall,
-                    ),
+                    Text(date, style: AppTheme.bodySmall),
                   ],
                 ),
               ],
@@ -720,50 +789,40 @@ class FeedbackCard extends StatelessWidget {
               decoration: BoxDecoration(
                 color: AppTheme.backgroundColor,
                 borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
-                border: Border.all(
-                  color: AppTheme.textLight.withOpacity(0.2),
-                ),
+                border: Border.all(color: AppTheme.textLight.withOpacity(0.2)),
               ),
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Icon(
-                    Icons.comment,
-                    size: 18,
-                    color: AppTheme.textSecondary,
-                  ),
+                  Icon(Icons.comment, size: 18, color: AppTheme.textSecondary),
                   const SizedBox(width: AppTheme.spacingSM),
-                  Expanded(
-                    child: Text(
-                      item.comments!,
-                      style: AppTheme.bodyMedium,
-                    ),
-                  ),
+                  Expanded(child: Text(item.comments!, style: AppTheme.bodyMedium)),
                 ],
               ),
             ),
           ],
-          // ✅ أزرار التعديل والحذف حسب الصلاحيات
           if (onEdit != null || onDelete != null) ...[
             const SizedBox(height: AppTheme.spacingMD),
             Row(
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
                 if (onEdit != null)
-                  ActionButton(
-                    icon: Icons.edit_rounded,
-                    color: AppTheme.infoColor,
-                    onPressed: onEdit!,
-                    tooltip: 'Edit',
+                  Tooltip(
+                    message: 'Edit',
+                    child: IconButton(
+                      icon: const Icon(Icons.edit_rounded),
+                      color: AppTheme.infoColor,
+                      onPressed: onEdit,
+                    ),
                   ),
-                if (onEdit != null && onDelete != null)
-                  const SizedBox(width: AppTheme.spacingSM),
                 if (onDelete != null)
-                  ActionButton(
-                    icon: Icons.delete_rounded,
-                    color: AppTheme.errorColor,
-                    onPressed: onDelete!,
-                    tooltip: 'Delete',
+                  Tooltip(
+                    message: 'Delete',
+                    child: IconButton(
+                      icon: const Icon(Icons.delete_rounded),
+                      color: AppTheme.errorColor,
+                      onPressed: onDelete,
+                    ),
                   ),
               ],
             ),

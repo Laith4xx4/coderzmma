@@ -100,6 +100,7 @@ class _ClassTypeListPageState extends State<ClassTypeListPage>
   PreferredSizeWidget _buildAppBar() {
     return AppBar(
       backgroundColor: AppTheme.primaryColor,
+      iconTheme: const IconThemeData(color: Colors.white),
       centerTitle: true,
       title: const Text(
         'CLASS TYPES',

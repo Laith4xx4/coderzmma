@@ -4,31 +4,43 @@ class RoleHelper {
   static const String adminRole = 'Admin';
   static const String coachRole = 'Coach';
   static const String memberRole = 'Member';
-  // static const String laithRole = 'laith';
-  /// Get current user role from SharedPreferences
+
+  /// جلب معرف المستخدم الحالي (ID)
+  static Future<int?> getCurrentUserId() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getInt("userId");
+  }
+
+  /// جلب اسم المستخدم الحالي (UserName) - جديد
+  static Future<String?> getCurrentUserName() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString("userName"); // تأكد من تخزينه بهذا الاسم عند تسجيل الدخول
+  }
+
   static Future<String> getCurrentUserRole() async {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getString("userRole") ?? memberRole;
   }
 
-  /// Check if user is Admin
   static Future<bool> isAdmin() async {
     final role = await getCurrentUserRole();
     return role.toLowerCase() == adminRole.toLowerCase();
   }
 
-  /// Check if user is Coach
   static Future<bool> isCoach() async {
     final role = await getCurrentUserRole();
     return role.toLowerCase() == coachRole.toLowerCase();
   }
 
-  /// Check if user is Member
   static Future<bool> isMember() async {
     final role = await getCurrentUserRole();
     return role.toLowerCase() == memberRole.toLowerCase();
   }
 
+  static Future<bool> isClient() async {
+    final role = await getCurrentUserRole();
+    return role.toLowerCase() == 'client';
+  }
   /// Check if user can manage members (Admin only)
   static Future<bool> canManageMembers() async {
     return await isAdmin();

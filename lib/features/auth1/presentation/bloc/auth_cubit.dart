@@ -41,9 +41,10 @@ class AuthCubit extends Cubit<AuthState> {
   }
 
   Future<void> register({
+    required String userName, // Added userName
     required String email,
     required String password,
-    required String role, // ← أضف هذا السطر
+    required String role, 
     String? firstName,
     String? lastName,
     String? phoneNumber,
@@ -53,7 +54,7 @@ class AuthCubit extends Cubit<AuthState> {
 
     try {
       final user = await _registerUser(
-        userName: email, // أو استخدم userName إذا كان موجود
+        userName: userName, // Use the passed userName
         email: email,
         password: password,
         firstName: firstName,

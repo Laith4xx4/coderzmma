@@ -29,6 +29,7 @@ class _CoachListPageState extends State<CoachListPage> {
       backgroundColor: AppTheme.backgroundColor,
       appBar: AppBar(
         backgroundColor: AppTheme.primaryColor,
+        iconTheme: const IconThemeData(color: Colors.white),
         title: const Text(
           'Coaches',
           style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),

@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:maa3/core/api_strings.dart';
 
 import '../models/class_type_model.dart';
@@ -14,38 +15,78 @@ class ClassTypeApiService {
     return Uri.parse('${ApiStrings.baseUrl}$path');
   }
 
-  Future<List<ClassTypeModel>> getAllClassTypes() async {
-    final url = _buildUri(ApiStrings.classTypesEndpoint);
-    final response = await http.get(url);
+  /// Get token from SharedPreferences
+  Future<String> _getToken() async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('token');
 
-    if (response.statusCode == 200) {
-      final List data = json.decode(response.body) as List;
-      return data
-          .map((e) => ClassTypeModel.fromJson(e as Map<String, dynamic>))
-          .toList();
-    } else {
-      throw Exception('Failed to load class types');
+    if (token == null || token.isEmpty) {
+      throw Exception('No auth token found. Please login again.');
+    }
+
+    return token;
+  }
+
+  Future<List<ClassTypeModel>> getAllClassTypes() async {
+    try {
+      final token = await _getToken();
+      final url = _buildUri(ApiStrings.classTypesEndpoint);
+
+      final response = await http.get(
+        url,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final List data = json.decode(response.body) as List;
+        return data
+            .map((e) => ClassTypeModel.fromJson(e as Map<String, dynamic>))
+            .toList();
+      } else {
+        print('getAllClassTypes error: status=${response.statusCode}, body=${response.body}');
+        throw Exception('Failed to load class types: ${response.statusCode}');
+      }
+    } catch (e, st) {
+      print('getAllClassTypes exception: $e');
+      print(st);
+      rethrow;
     }
   }
 
   Future<ClassTypeModel> getClassTypeById(int id) async {
+    final token = await _getToken();
     final url = _buildUri('${ApiStrings.classTypesEndpoint}/$id');
-    final response = await http.get(url);
+
+    final response = await http.get(
+      url,
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+    );
 
     if (response.statusCode == 200) {
       return ClassTypeModel.fromJson(
         json.decode(response.body) as Map<String, dynamic>,
       );
     } else {
-      throw Exception('Failed to load class type');
+      throw Exception('Failed to load class type (${response.statusCode}): ${response.body}');
     }
   }
 
   Future<ClassTypeModel> createClassType(CreateClassTypeModel data) async {
+    final token = await _getToken();
     final url = _buildUri(ApiStrings.classTypesEndpoint);
+
     final response = await http.post(
       url,
-      headers: {'Content-Type': 'application/json'},
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
       body: json.encode(data.toJson()),
     );
 
@@ -54,29 +95,42 @@ class ClassTypeApiService {
         json.decode(response.body) as Map<String, dynamic>,
       );
     } else {
-      throw Exception('Failed to create class type');
+      throw Exception('Failed to create class type (${response.statusCode}): ${response.body}');
     }
   }
 
   Future<void> updateClassType(int id, UpdateClassTypeModel data) async {
+    final token = await _getToken();
     final url = _buildUri('${ApiStrings.classTypesEndpoint}/$id');
+
     final response = await http.put(
       url,
-      headers: {'Content-Type': 'application/json'},
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
       body: json.encode(data.toJson()),
     );
 
     if (response.statusCode != 200 && response.statusCode != 204) {
-      throw Exception('Failed to update class type');
+      throw Exception('Failed to update class type (${response.statusCode}): ${response.body}');
     }
   }
 
   Future<void> deleteClassType(int id) async {
+    final token = await _getToken();
     final url = _buildUri('${ApiStrings.classTypesEndpoint}/$id');
-    final response = await http.delete(url);
+
+    final response = await http.delete(
+      url,
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+    );
 
     if (response.statusCode != 200 && response.statusCode != 204) {
-      throw Exception('Failed to delete class type');
+      throw Exception('Failed to delete class type (${response.statusCode}): ${response.body}');
     }
   }
 }

@@ -34,6 +34,7 @@ class _BookingListPageState extends State<BookingListPage> {
       backgroundColor: AppTheme.backgroundColor,
       appBar: AppBar(
         backgroundColor: AppTheme.primaryColor,
+        iconTheme: const IconThemeData(color: Colors.white),
         title: const Text(
           'Bookings',
           style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),

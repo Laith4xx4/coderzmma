@@ -14,6 +14,7 @@ class RegisterScreen extends StatefulWidget {
 
 class _RegisterScreenState extends State<RegisterScreen> {
   final _formKey = GlobalKey<FormState>();
+  final TextEditingController _userNameController = TextEditingController(); // Added
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   final TextEditingController _firstNameController = TextEditingController();
@@ -57,7 +58,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppTheme.backgroundColor, // السكني الفاتح جداً
+      backgroundColor: AppTheme.backgroundColor, 
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -88,12 +89,20 @@ class _RegisterScreenState extends State<RegisterScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const SizedBox(height: 10),
+                   const SizedBox(height: 10),
                   const Text('Create Account', style: AppTheme.heading1),
                   const SizedBox(height: 8),
                   const Text('Sign up to start your training journey', style: AppTheme.bodyMedium),
                   const SizedBox(height: 32),
 
+                  _buildRegisterField(
+                    _userNameController, 
+                    'Username', 
+                    Icons.person,
+                    validator: (v) => (v == null || v.length < 3) ? 'Min 3 chars' : null,
+                  ),
+                  const SizedBox(height: 16),
+                  
                   // الحقول في بطاقات (Cards) كما في تصميم الـ Login
                   _buildRegisterField(_firstNameController, 'First Name', Icons.person_outline),
                   const SizedBox(height: 16),
@@ -202,9 +211,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
   void _onRegisterPressed() {
     if (_formKey.currentState!.validate()) {
       context.read<AuthCubit>().register(
+        userName: _userNameController.text, 
         email: _emailController.text,
         password: _passwordController.text,
-        role: 'Member',
+        role: 'Client', // Default role is now Client
         firstName: _firstNameController.text.isEmpty ? null : _firstNameController.text,
         lastName: _lastNameController.text.isEmpty ? null : _lastNameController.text,
         phoneNumber: _phoneController.text.isEmpty ? null : _phoneController.text,
@@ -215,6 +225,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   @override
   void dispose() {
+    _userNameController.dispose(); // Dispose userName
     _emailController.dispose();
     _passwordController.dispose();
     _firstNameController.dispose();

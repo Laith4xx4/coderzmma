@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:maa3/core/role_helper.dart';
 import 'package:maa3/core/app_theme.dart';
 import 'package:maa3/widgets/modern_card.dart';
 import 'package:maa3/features/progress/domain/entities/member_progress_entity.dart';
@@ -18,30 +20,110 @@ class ProgressListPage extends StatefulWidget {
 }
 
 class _ProgressListPageState extends State<ProgressListPage> {
+  String _currentUserRole = '';
+  int? _currentUserId;
+  bool _isAdmin = false;
+  bool _isCoach = false;
+  bool _isMember = false;
+  bool _isLoading = true;
+
   @override
   void initState() {
     super.initState();
-    context.read<ProgressCubit>().loadProgress();
-    context.read<MemberCubit>().loadMembers();
+    _loadUserRoleAndData();
   }
+
+  Future<void> _loadUserRoleAndData() async {
+    final prefs = await SharedPreferences.getInstance();
+
+    _currentUserRole = await RoleHelper.getCurrentUserRole();
+    _isAdmin = await RoleHelper.isAdmin();
+    _isCoach = await RoleHelper.isCoach();
+    _isMember = await RoleHelper.isMember();
+
+    // جلب الـ ID
+    _currentUserId = prefs.getInt('userId');
+    if (_currentUserId == null) {
+      String? idString = prefs.getString('userId');
+      if (idString != null) {
+        _currentUserId = int.tryParse(idString);
+      }
+    }
+
+    setState(() => _isLoading = false);
+
+    if (mounted) {
+      context.read<ProgressCubit>().loadProgress();
+      context.read<MemberCubit>().loadMembers();
+    }
+  }
+
+  List<MemberProgressEntity> _filterProgressByRole(List<MemberProgressEntity> items) {
+    // Admin و Coach يرون كل شيء
+    if (_isAdmin || _isCoach) return items;
+    
+    // Member يرى فقط التقدم الخاص به
+    if (_isMember) {
+      return items.where((item) => item.memberId == _currentUserId).toList();
+    }
+    
+    return items;
+  }
+
+  bool _canEdit() => _isAdmin || _isCoach;
+  bool _canDelete() => _isAdmin || _isCoach;
+  bool _canAdd() => _isAdmin || _isCoach;
 
   @override
   Widget build(BuildContext context) {
+    if (_isLoading) {
+      return Scaffold(
+        backgroundColor: AppTheme.backgroundColor,
+        appBar: AppBar(
+          backgroundColor: AppTheme.primaryColor,
+          title: const Text(
+            'Member Progress',
+            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+          ),
+        ),
+        body: const Center(child: CircularProgressIndicator()),
+      );
+    }
+
     return Scaffold(
       backgroundColor: AppTheme.backgroundColor,
       appBar: AppBar(
         backgroundColor: AppTheme.primaryColor,
-        title: const Text(
-          'Member Progress',
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+        iconTheme: const IconThemeData(color: Colors.white),
+        title: Row(
+          children: [
+            const Text(
+              'Member Progress',
+              style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+            ),
+            const Spacer(),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.2),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Text(
+                _currentUserRole,
+                style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w500),
+              ),
+            ),
+          ],
         ),
         elevation: 0,
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => _showAddProgressDialog(context),
-        backgroundColor: AppTheme.primaryColor,
-        child: const Icon(Icons.add, color: Colors.white),
-      ),
+      floatingActionButton: _canAdd()
+          ? FloatingActionButton(
+              onPressed: () => _showAddProgressDialog(context),
+              backgroundColor: AppTheme.primaryColor,
+              child: const Icon(Icons.add, color: Colors.white),
+            )
+          : null,
       body: BlocConsumer<ProgressCubit, ProgressState>(
         listener: (context, state) {
           if (state is ProgressOperationSuccess) {
@@ -66,7 +148,9 @@ class _ProgressListPageState extends State<ProgressListPage> {
           }
 
           if (state is ProgressLoaded) {
-            if (state.items.isEmpty) {
+            final filteredItems = _filterProgressByRole(state.items);
+            
+            if (filteredItems.isEmpty) {
               return Center(
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -77,9 +161,11 @@ class _ProgressListPageState extends State<ProgressListPage> {
                       color: Colors.grey,
                     ),
                     const SizedBox(height: 16),
-                    const Text(
-                      'No progress records found.',
-                      style: TextStyle(fontSize: 18, color: Colors.grey),
+                    Text(
+                      _isMember 
+                          ? 'No progress records found for you.'
+                          : 'No progress records found.',
+                      style: const TextStyle(fontSize: 18, color: Colors.grey),
                     ),
                   ],
                 ),
@@ -92,13 +178,13 @@ class _ProgressListPageState extends State<ProgressListPage> {
               },
               child: ListView.builder(
                 padding: const EdgeInsets.all(16),
-                itemCount: state.items.length,
+                itemCount: filteredItems.length,
                 itemBuilder: (context, index) {
-                  final item = state.items[index];
+                  final item = filteredItems[index];
                   return ProgressCard(
                     item: item,
-                    onEdit: () => _showEditProgressDialog(context, item),
-                    onDelete: () => _showDeleteDialog(context, item.id),
+                    onEdit: _canEdit() ? () => _showEditProgressDialog(context, item) : null,
+                    onDelete: _canDelete() ? () => _showDeleteDialog(context, item.id) : null,
                   );
                 },
               ),
@@ -143,121 +229,166 @@ class _ProgressListPageState extends State<ProgressListPage> {
       members = membersState.members;
     }
 
+    if (members.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('No members available. Please add members first.'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
+
     final TextEditingController _setsController = TextEditingController();
-    int? selectedMemberId;
-    DateTime? progressDate;
+    int? selectedMemberId = members.first.id;
+    DateTime? progressDate = DateTime.now();
     DateTime? promotionDate;
 
     showDialog(
       context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text('Add Progress'),
-          content: Form(
-            key: _formKey,
-            child: SingleChildScrollView(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
+      barrierDismissible: false,
+      builder: (dialogContext) {
+        return StatefulBuilder(
+          builder: (context, setStateDialog) {
+            return AlertDialog(
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+              title: Row(
                 children: [
-                  DropdownButtonFormField<int>(
-                    decoration: const InputDecoration(labelText: 'Member *'),
-                    items: members.map<DropdownMenuItem<int>>((member) {
-                      return DropdownMenuItem<int>(
-                        value: member.id,
-                        child: Text(member.userName),
-                      );
-                    }).toList(),
-                    onChanged: (value) => selectedMemberId = value,
-                    validator: (value) =>
-                        value == null ? 'Select a member' : null,
-                  ),
-                  const SizedBox(height: 16),
-                  TextFormField(
-                    readOnly: true,
-                    decoration: const InputDecoration(
-                      labelText: 'Progress Date *',
-                      suffixIcon: Icon(Icons.calendar_today),
+                  const Text('Add Progress'),
+                  const Spacer(),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: AppTheme.primaryColor.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(12),
                     ),
-                    onTap: () async {
-                      DateTime? date = await showDatePicker(
-                        context: context,
-                        initialDate: DateTime.now(),
-                        firstDate: DateTime(2000),
-                        lastDate: DateTime(2100),
-                      );
-                      if (date != null) {
-                        progressDate = date;
-                      }
-                    },
-                    controller: TextEditingController(
-                      text: progressDate != null
-                          ? progressDate!.toLocal().toString().split(' ')[0]
-                          : '',
-                    ),
-                    validator: (value) =>
-                        progressDate == null ? 'Select date' : null,
-                  ),
-                  const SizedBox(height: 16),
-                  TextFormField(
-                    controller: _setsController,
-                    decoration: const InputDecoration(
-                      labelText: 'Sets Completed *',
-                    ),
-                    keyboardType: TextInputType.number,
-                    validator: (value) => value!.isEmpty ? 'Required' : null,
-                  ),
-                  const SizedBox(height: 16),
-                  TextFormField(
-                    readOnly: true,
-                    decoration: const InputDecoration(
-                      labelText: 'Promotion Date (Optional)',
-                      suffixIcon: Icon(Icons.calendar_today),
-                    ),
-                    onTap: () async {
-                      DateTime? date = await showDatePicker(
-                        context: context,
-                        initialDate: DateTime.now(),
-                        firstDate: DateTime(2000),
-                        lastDate: DateTime(2100),
-                      );
-                      if (date != null) {
-                        promotionDate = date;
-                      }
-                    },
-                    controller: TextEditingController(
-                      text: promotionDate != null
-                          ? promotionDate!.toLocal().toString().split(' ')[0]
-                          : '',
+                    child: Text(
+                      _currentUserRole,
+                      style: TextStyle(
+                        fontSize: 10,
+                        color: AppTheme.primaryColor,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ),
                 ],
               ),
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Cancel'),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                if (_formKey.currentState!.validate() &&
-                    selectedMemberId != null &&
-                    progressDate != null) {
-                  context.read<ProgressCubit>().createProgressAction(
-                    CreateMemberProgressModel(
-                      memberId: selectedMemberId!,
-                      date: progressDate!,
-                      setsCompleted: int.parse(_setsController.text),
-                      promotionDate: promotionDate,
-                    ),
-                  );
-                  Navigator.pop(context);
-                }
-              },
-              child: const Text('Add'),
-            ),
-          ],
+              content: Form(
+                key: _formKey,
+                child: SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      DropdownButtonFormField<int>(
+                        value: selectedMemberId,
+                        decoration: const InputDecoration(
+                          labelText: 'Member *',
+                          border: OutlineInputBorder(),
+                        ),
+                        items: members.map<DropdownMenuItem<int>>((member) {
+                          return DropdownMenuItem<int>(
+                            value: member.id,
+                            child: Text(member.userName ?? 'Member ${member.id}'),
+                          );
+                        }).toList(),
+                        onChanged: (value) => setStateDialog(() => selectedMemberId = value),
+                        validator: (value) => value == null ? 'Select a member' : null,
+                      ),
+                      const SizedBox(height: 16),
+                      TextFormField(
+                        readOnly: true,
+                        decoration: const InputDecoration(
+                          labelText: 'Progress Date *',
+                          border: OutlineInputBorder(),
+                          suffixIcon: Icon(Icons.calendar_today),
+                        ),
+                        onTap: () async {
+                          DateTime? date = await showDatePicker(
+                            context: context,
+                            initialDate: progressDate ?? DateTime.now(),
+                            firstDate: DateTime(2000),
+                            lastDate: DateTime(2100),
+                          );
+                          if (date != null) {
+                            setStateDialog(() => progressDate = date);
+                          }
+                        },
+                        controller: TextEditingController(
+                          text: progressDate != null
+                              ? progressDate!.toLocal().toString().split(' ')[0]
+                              : '',
+                        ),
+                        validator: (value) => progressDate == null ? 'Select date' : null,
+                      ),
+                      const SizedBox(height: 16),
+                      TextFormField(
+                        controller: _setsController,
+                        decoration: const InputDecoration(
+                          labelText: 'Sets Completed *',
+                          border: OutlineInputBorder(),
+                        ),
+                        keyboardType: TextInputType.number,
+                        validator: (value) => value!.isEmpty ? 'Required' : null,
+                      ),
+                      const SizedBox(height: 16),
+                      TextFormField(
+                        readOnly: true,
+                        decoration: const InputDecoration(
+                          labelText: 'Promotion Date (Optional)',
+                          border: OutlineInputBorder(),
+                          suffixIcon: Icon(Icons.calendar_today),
+                        ),
+                        onTap: () async {
+                          DateTime? date = await showDatePicker(
+                            context: context,
+                            initialDate: promotionDate ?? DateTime.now(),
+                            firstDate: DateTime(2000),
+                            lastDate: DateTime(2100),
+                          );
+                          if (date != null) {
+                            setStateDialog(() => promotionDate = date);
+                          }
+                        },
+                        controller: TextEditingController(
+                          text: promotionDate != null
+                              ? promotionDate!.toLocal().toString().split(' ')[0]
+                              : '',
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(dialogContext),
+                  child: const Text('Cancel'),
+                ),
+                ElevatedButton(
+                  onPressed: () {
+                    if (_formKey.currentState!.validate() &&
+                        selectedMemberId != null &&
+                        progressDate != null) {
+                      context.read<ProgressCubit>().createProgressAction(
+                        CreateMemberProgressModel(
+                          memberId: selectedMemberId!,
+                          date: progressDate!,
+                          setsCompleted: int.parse(_setsController.text),
+                          promotionDate: promotionDate,
+                        ),
+                      );
+                      Navigator.pop(dialogContext);
+                    }
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppTheme.primaryColor,
+                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                  ),
+                  child: const Text('Add Progress', style: TextStyle(color: Colors.white)),
+                ),
+              ],
+            );
+          },
         );
       },
     );
@@ -275,72 +406,132 @@ class _ProgressListPageState extends State<ProgressListPage> {
 
     showDialog(
       context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text('Edit Progress'),
-          content: Form(
-            key: _formKey,
-            child: SingleChildScrollView(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
+      barrierDismissible: false,
+      builder: (dialogContext) {
+        return StatefulBuilder(
+          builder: (context, setStateDialog) {
+            return AlertDialog(
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+              title: Row(
                 children: [
-                  TextFormField(
-                    controller: _setsController,
-                    decoration: const InputDecoration(
-                      labelText: 'Sets Completed *',
+                  const Text('Edit Progress'),
+                  const Spacer(),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: AppTheme.primaryColor.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(12),
                     ),
-                    keyboardType: TextInputType.number,
-                    validator: (value) => value!.isEmpty ? 'Required' : null,
-                  ),
-                  const SizedBox(height: 16),
-                  TextFormField(
-                    readOnly: true,
-                    decoration: const InputDecoration(
-                      labelText: 'Promotion Date (Optional)',
-                      suffixIcon: Icon(Icons.calendar_today),
-                    ),
-                    onTap: () async {
-                      DateTime? date = await showDatePicker(
-                        context: context,
-                        initialDate: promotionDate ?? DateTime.now(),
-                        firstDate: DateTime(2000),
-                        lastDate: DateTime(2100),
-                      );
-                      if (date != null) {
-                        promotionDate = date;
-                      }
-                    },
-                    controller: TextEditingController(
-                      text: promotionDate != null
-                          ? promotionDate!.toLocal().toString().split(' ')[0]
-                          : '',
+                    child: Text(
+                      _currentUserRole,
+                      style: TextStyle(
+                        fontSize: 10,
+                        color: AppTheme.primaryColor,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ),
                 ],
               ),
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Cancel'),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                if (_formKey.currentState!.validate()) {
-                  context.read<ProgressCubit>().updateProgressAction(
-                    item.id,
-                    UpdateMemberProgressModel(
-                      setsCompleted: int.parse(_setsController.text),
-                      promotionDate: promotionDate,
-                    ),
-                  );
-                  Navigator.pop(context);
-                }
-              },
-              child: const Text('Update'),
-            ),
-          ],
+              content: Form(
+                key: _formKey,
+                child: SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: Colors.grey.shade100,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Row(
+                          children: [
+                            const Icon(Icons.person, size: 20, color: Colors.grey),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const Text(
+                                    'Member',
+                                    style: TextStyle(fontSize: 12, color: Colors.grey),
+                                  ),
+                                  Text(
+                                    item.memberName,
+                                    style: const TextStyle(fontWeight: FontWeight.bold),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      TextFormField(
+                        controller: _setsController,
+                        decoration: const InputDecoration(
+                          labelText: 'Sets Completed *',
+                          border: OutlineInputBorder(),
+                        ),
+                        keyboardType: TextInputType.number,
+                        validator: (value) => value!.isEmpty ? 'Required' : null,
+                      ),
+                      const SizedBox(height: 16),
+                      TextFormField(
+                        readOnly: true,
+                        decoration: const InputDecoration(
+                          labelText: 'Promotion Date (Optional)',
+                          border: OutlineInputBorder(),
+                          suffixIcon: Icon(Icons.calendar_today),
+                        ),
+                        onTap: () async {
+                          DateTime? date = await showDatePicker(
+                            context: context,
+                            initialDate: promotionDate ?? DateTime.now(),
+                            firstDate: DateTime(2000),
+                            lastDate: DateTime(2100),
+                          );
+                          if (date != null) {
+                            setStateDialog(() => promotionDate = date);
+                          }
+                        },
+                        controller: TextEditingController(
+                          text: promotionDate != null
+                              ? promotionDate!.toLocal().toString().split(' ')[0]
+                              : '',
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(dialogContext),
+                  child: const Text('Cancel'),
+                ),
+                ElevatedButton(
+                  onPressed: () {
+                    if (_formKey.currentState!.validate()) {
+                      context.read<ProgressCubit>().updateProgressAction(
+                        item.id,
+                        UpdateMemberProgressModel(
+                          setsCompleted: int.parse(_setsController.text),
+                          promotionDate: promotionDate,
+                        ),
+                      );
+                      Navigator.pop(dialogContext);
+                    }
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppTheme.primaryColor,
+                  ),
+                  child: const Text('Update', style: TextStyle(color: Colors.white)),
+                ),
+              ],
+            );
+          },
         );
       },
     );
@@ -350,9 +541,16 @@ class _ProgressListPageState extends State<ProgressListPage> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Delete Progress'),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Row(
+          children: [
+            Icon(Icons.warning_rounded, color: AppTheme.errorColor),
+            const SizedBox(width: 8),
+            const Text('Delete Progress'),
+          ],
+        ),
         content: const Text(
-          'Are you sure you want to delete this progress record?',
+          'Are you sure you want to delete this progress record? This action cannot be undone.',
         ),
         actions: [
           TextButton(

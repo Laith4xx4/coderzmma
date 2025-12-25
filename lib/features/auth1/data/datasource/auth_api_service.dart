@@ -1,17 +1,14 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:maa3/core/api_strings.dart';
 
 class AuthApiService {
-  // // الرابط الأساسي للـ Auth
-  final String _authBaseUrl = 'http://192.168.100.66:5086/api/Auth';
-  // final String _authBaseUrl = 'http://192.168.68.108:5086/api/Auth';
-  // الرابط الأساسي للمستخدمين
-  final String _usersBaseUrl = 'http://192.168.100.66/api/Users';
+  final String _baseUrl = ApiStrings.baseUrl;
 
   // =================== Login ===================
   Future<Map<String, dynamic>> login(String email, String password) async {
     final response = await http.post(
-      Uri.parse('$_authBaseUrl/login'),
+      Uri.parse('$_baseUrl${ApiStrings.loginEndpoint}'),
       headers: {'Content-Type': 'application/json'},
       body: json.encode({'email': email, 'password': password}),
     );
@@ -38,6 +35,7 @@ class AuthApiService {
 
   // =================== Register ===================
   Future<Map<String, dynamic>> register({
+    required String userName, // Added userName
     required String email,
     required String password,
     required String role,
@@ -47,6 +45,7 @@ class AuthApiService {
     String? dateOfBirth,
   }) async {
     final body = {
+      'userName': userName, // Added userName
       'email': email,
       'password': password,
       'role': role,
@@ -57,7 +56,7 @@ class AuthApiService {
     };
 
     final response = await http.post(
-      Uri.parse('$_authBaseUrl/register'),
+      Uri.parse('$_baseUrl${ApiStrings.registerEndpoint}'),
       headers: {'Content-Type': 'application/json'},
       body: json.encode(body),
     );
@@ -86,7 +85,8 @@ class AuthApiService {
   /// دالة لجلب بيانات المستخدم الحالي بناءً على التوكن فقط
   /// تستهدف الرابط: api/Users/me
   Future<Map<String, dynamic>> getCurrentUserProfile(String token) async {
-    final uri = Uri.parse('$_usersBaseUrl/me');
+    // Note: Assuming '/Users/me' is standard, if not defined in ApiStrings, we append it directly
+    final uri = Uri.parse('$_baseUrl/Users/me');
 
     final response = await http.get(
       uri,

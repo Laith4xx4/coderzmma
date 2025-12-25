@@ -66,6 +66,7 @@ class _SessionListPageState extends State<SessionListPage> {
       backgroundColor: AppTheme.backgroundColor,
       appBar: AppBar(
         backgroundColor: AppTheme.primaryColor,
+        iconTheme: const IconThemeData(color: Colors.white),
         title: Text(
           widget.classTypeId == null
               ? 'Sessions'

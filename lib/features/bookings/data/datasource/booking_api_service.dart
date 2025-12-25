@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:maa3/core/api_strings.dart';
 
 import '../models/booking_model.dart';
@@ -14,40 +15,80 @@ class BookingApiService {
     return Uri.parse('${ApiStrings.baseUrl}$path');
   }
 
-  Future<List<BookingModel>> getAllBookings() async {
-    final url = _buildUri(ApiStrings.bookingsEndpoint);
-    final response = await http.get(url);
+  /// Get token from SharedPreferences
+  Future<String> _getToken() async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('token');
 
-    if (response.statusCode == 200) {
-      final List data = json.decode(response.body) as List;
-      return data
-          .map(
-            (e) => BookingModel.fromJson(e as Map<String, dynamic>),
-          )
-          .toList();
-    } else {
-      throw Exception('Failed to load bookings');
+    if (token == null || token.isEmpty) {
+      throw Exception('No auth token found. Please login again.');
+    }
+
+    return token;
+  }
+
+  Future<List<BookingModel>> getAllBookings() async {
+    try {
+      final token = await _getToken();
+      final url = _buildUri(ApiStrings.bookingsEndpoint);
+
+      final response = await http.get(
+        url,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final List data = json.decode(response.body) as List;
+        return data
+            .map(
+              (e) => BookingModel.fromJson(e as Map<String, dynamic>),
+            )
+            .toList();
+      } else {
+        print('getAllBookings error: status=${response.statusCode}, body=${response.body}');
+        throw Exception('Failed to load bookings: ${response.statusCode}');
+      }
+    } catch (e, st) {
+      print('getAllBookings exception: $e');
+      print(st);
+      rethrow;
     }
   }
 
   Future<BookingModel> getBookingById(int id) async {
+    final token = await _getToken();
     final url = _buildUri('${ApiStrings.bookingsEndpoint}/$id');
-    final response = await http.get(url);
+
+    final response = await http.get(
+      url,
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+    );
 
     if (response.statusCode == 200) {
       return BookingModel.fromJson(
         json.decode(response.body) as Map<String, dynamic>,
       );
     } else {
-      throw Exception('Failed to load booking');
+      throw Exception('Failed to load booking (${response.statusCode}): ${response.body}');
     }
   }
 
   Future<BookingModel> createBooking(CreateBookingModel data) async {
+    final token = await _getToken();
     final url = _buildUri(ApiStrings.bookingsEndpoint);
+
     final response = await http.post(
       url,
-      headers: {'Content-Type': 'application/json'},
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
       body: json.encode(data.toJson()),
     );
 
@@ -56,29 +97,42 @@ class BookingApiService {
         json.decode(response.body) as Map<String, dynamic>,
       );
     } else {
-      throw Exception('Failed to create booking');
+      throw Exception('Failed to create booking (${response.statusCode}): ${response.body}');
     }
   }
 
   Future<void> updateBooking(int id, UpdateBookingModel data) async {
+    final token = await _getToken();
     final url = _buildUri('${ApiStrings.bookingsEndpoint}/$id');
+
     final response = await http.put(
       url,
-      headers: {'Content-Type': 'application/json'},
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
       body: json.encode(data.toJson()),
     );
 
     if (response.statusCode != 200 && response.statusCode != 204) {
-      throw Exception('Failed to update booking');
+      throw Exception('Failed to update booking (${response.statusCode}): ${response.body}');
     }
   }
 
   Future<void> deleteBooking(int id) async {
+    final token = await _getToken();
     final url = _buildUri('${ApiStrings.bookingsEndpoint}/$id');
-    final response = await http.delete(url);
+
+    final response = await http.delete(
+      url,
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+    );
 
     if (response.statusCode != 200 && response.statusCode != 204) {
-      throw Exception('Failed to delete booking');
+      throw Exception('Failed to delete booking (${response.statusCode}): ${response.body}');
     }
   }
 }

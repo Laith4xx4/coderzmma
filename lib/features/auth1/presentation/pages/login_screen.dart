@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:jwt_decoder/jwt_decoder.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:maa3/core/app_theme.dart'; // استيراد الثيم الجديد
+import 'package:maa3/core/app_theme.dart';
 import 'package:maa3/features/auth1/presentation/bloc/auth_cubit.dart';
 import 'package:maa3/features/auth1/presentation/bloc/auth_state.dart';
 import 'package:maa3/features/auth1/presentation/pages/register_screen.dart';
@@ -23,21 +23,47 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppTheme.backgroundColor, // استخدام السكني الفاتح جداً من الثيم
+      backgroundColor: AppTheme.backgroundColor,
       body: BlocConsumer<AuthCubit, AuthState>(
+        // داخل BlocConsumer -> listener
         listener: (context, state) async {
           if (state is AuthSuccess) {
+            print("---------------- LOGIN DEBUG INFO ----------------");
+            print("TOKEN: ${state.token}");
+
             SharedPreferences prefs = await SharedPreferences.getInstance();
+
+            // 1. فك تشفير التوكن لاستخراج الاسم الحقيقي
+            Map<String, dynamic> decodedToken = JwtDecoder.decode(state.token);
+
+            // استخراج الاسم من الحقل القياسي في JWT الخاص بك
+            String? nameFromToken = decodedToken['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name']
+                ?? decodedToken['unique_name']
+                ?? decodedToken['sub'];
+
+            print("EXTRACTED NAME FROM TOKEN: $nameFromToken");
+
+            // 2. حفظ التوكن والمعلومات الأساسية
             await prefs.setString("token", state.token);
             await prefs.setString("userEmail", state.user.email);
+
+            // ✅ الحل النهائي: حفظ الاسم المستخرج من التوكن لضمان ظهوره في البروفايل
+            // إذا كان المستخرج فارغاً، نستخدم القيمة من الموديل، وإذا كانت فارغة نضع "User"
+            String nameToSave = (nameFromToken != null && nameFromToken.isNotEmpty)
+                ? nameFromToken
+                : (state.user.userName.isNotEmpty ? state.user.userName : "User");
+
+            await prefs.setString("userName", nameToSave);
             await prefs.setString("firstName", state.user.firstName ?? "");
             await prefs.setString("lastName", state.user.lastName ?? "");
 
-            Map<String, dynamic> decodedToken = JwtDecoder.decode(state.token);
+            // 3. استخراج الدور (Role)
             final String realRole = decodedToken['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'] ??
                 decodedToken['role'] ?? "Member";
 
             await prefs.setString("userRole", realRole);
+            print("FINAL SAVED NAME: $nameToSave");
+            print("--------------------------------------------------");
 
             if (mounted) {
               Navigator.pushReplacement(
@@ -46,6 +72,7 @@ class _LoginScreenState extends State<LoginScreen> {
               );
             }
           } else if (state is AuthFailure) {
+            print("DEBUG: Login Error -> ${state.error}");
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                 content: Text('Login Failed: ${state.error}'),
@@ -58,7 +85,7 @@ class _LoginScreenState extends State<LoginScreen> {
           return SingleChildScrollView(
             child: Column(
               children: [
-                _buildHeaderSection(), // الجزء العلوي الأسود
+                _buildHeaderSection(),
                 Padding(
                   padding: const EdgeInsets.all(AppTheme.spacingLG),
                   child: Column(
@@ -87,7 +114,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         child: ElevatedButton(
                           onPressed: () {
                             context.read<AuthCubit>().login(
-                              _emailController.text,
+                              _emailController.text.trim(),
                               _passwordController.text,
                             );
                           },
@@ -111,7 +138,6 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  // تصميم الجزء العلوي متناغم مع صفحة البروفايل
   Widget _buildHeaderSection() {
     return Container(
       width: double.infinity,
@@ -161,7 +187,6 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  // حقول إدخال متجانسة مع تصميم الـ Cards
   Widget _buildCustomTextField({
     required TextEditingController controller,
     required String label,
@@ -196,26 +221,22 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Widget _buildFooterSection() {
-    return Column(
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Text("Don't have an account? ", style: AppTheme.bodyMedium),
-            GestureDetector(
-              onTap: () {
-                Navigator.push(context, MaterialPageRoute(builder: (context) => const RegisterScreen()));
-              },
-              child: const Text(
-                "Register Now",
-                style: TextStyle(
-                  color: AppTheme.primaryColor,
-                  fontWeight: FontWeight.bold,
-                  decoration: TextDecoration.underline,
-                ),
-              ),
+        const Text("Don't have an account? ", style: AppTheme.bodyMedium),
+        GestureDetector(
+          onTap: () {
+            Navigator.push(context, MaterialPageRoute(builder: (context) => const RegisterScreen()));
+          },
+          child: const Text(
+            "Register Now",
+            style: TextStyle(
+              color: AppTheme.primaryColor,
+              fontWeight: FontWeight.bold,
+              decoration: TextDecoration.underline,
             ),
-          ],
+          ),
         ),
       ],
     );

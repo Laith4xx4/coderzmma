@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:maa3/core/api_strings.dart';
 
 import '../models/create_member_progress_model.dart';
@@ -14,39 +15,79 @@ class MemberProgressApiService {
     return Uri.parse('${ApiStrings.baseUrl}$path');
   }
 
-  Future<List<MemberProgressModel>> getAllProgress() async {
-    final url = _buildUri(ApiStrings.memberSetProgressEndpoint);
-    final response = await http.get(url);
+  /// Get token from SharedPreferences
+  Future<String> _getToken() async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('token');
 
-    if (response.statusCode == 200) {
-      final List data = json.decode(response.body) as List;
-      return data
-          .map((e) => MemberProgressModel.fromJson(e as Map<String, dynamic>))
-          .toList();
-    } else {
-      throw Exception('Failed to load member progress');
+    if (token == null || token.isEmpty) {
+      throw Exception('No auth token found. Please login again.');
+    }
+
+    return token;
+  }
+
+  Future<List<MemberProgressModel>> getAllProgress() async {
+    try {
+      final token = await _getToken();
+      final url = _buildUri(ApiStrings.memberSetProgressEndpoint);
+
+      final response = await http.get(
+        url,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final List data = json.decode(response.body) as List;
+        return data
+            .map((e) => MemberProgressModel.fromJson(e as Map<String, dynamic>))
+            .toList();
+      } else {
+        print('getAllProgress error: status=${response.statusCode}, body=${response.body}');
+        throw Exception('Failed to load member progress: ${response.statusCode}');
+      }
+    } catch (e, st) {
+      print('getAllProgress exception: $e');
+      print(st);
+      rethrow;
     }
   }
 
   Future<MemberProgressModel> getProgressById(int id) async {
+    final token = await _getToken();
     final url = _buildUri('${ApiStrings.memberSetProgressEndpoint}/$id');
-    final response = await http.get(url);
+
+    final response = await http.get(
+      url,
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+    );
 
     if (response.statusCode == 200) {
       return MemberProgressModel.fromJson(
         json.decode(response.body) as Map<String, dynamic>,
       );
     } else {
-      throw Exception('Failed to load member progress');
+      throw Exception('Failed to load member progress (${response.statusCode}): ${response.body}');
     }
   }
 
   Future<MemberProgressModel> createProgress(
       CreateMemberProgressModel data) async {
+    final token = await _getToken();
     final url = _buildUri(ApiStrings.memberSetProgressEndpoint);
+
     final response = await http.post(
       url,
-      headers: {'Content-Type': 'application/json'},
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
       body: json.encode(data.toJson()),
     );
 
@@ -55,29 +96,42 @@ class MemberProgressApiService {
         json.decode(response.body) as Map<String, dynamic>,
       );
     } else {
-      throw Exception('Failed to create member progress');
+      throw Exception('Failed to create member progress (${response.statusCode}): ${response.body}');
     }
   }
 
   Future<void> updateProgress(int id, UpdateMemberProgressModel data) async {
+    final token = await _getToken();
     final url = _buildUri('${ApiStrings.memberSetProgressEndpoint}/$id');
+
     final response = await http.put(
       url,
-      headers: {'Content-Type': 'application/json'},
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
       body: json.encode(data.toJson()),
     );
 
     if (response.statusCode != 200 && response.statusCode != 204) {
-      throw Exception('Failed to update member progress');
+      throw Exception('Failed to update member progress (${response.statusCode}): ${response.body}');
     }
   }
 
   Future<void> deleteProgress(int id) async {
+    final token = await _getToken();
     final url = _buildUri('${ApiStrings.memberSetProgressEndpoint}/$id');
-    final response = await http.delete(url);
+
+    final response = await http.delete(
+      url,
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+    );
 
     if (response.statusCode != 200 && response.statusCode != 204) {
-      throw Exception('Failed to delete member progress');
+      throw Exception('Failed to delete member progress (${response.statusCode}): ${response.body}');
     }
   }
 }
