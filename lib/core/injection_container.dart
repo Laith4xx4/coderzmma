@@ -7,6 +7,7 @@ import 'package:maa3/features/auth1/data/datasource/auth_api_service.dart';
 import 'package:maa3/features/auth1/data/repositories/auth_repository_impl.dart';
 import 'package:maa3/features/auth1/domain/use_cases/login_user.dart';
 import 'package:maa3/features/auth1/domain/use_cases/register_user.dart';
+import 'package:maa3/features/auth1/domain/use_cases/google_login_user.dart'; // Added
 import 'package:maa3/features/auth1/presentation/bloc/auth_cubit.dart';
 
 // Members
@@ -94,10 +95,12 @@ Future<void> init() async {
 
   sl.registerLazySingleton(() => LoginUser(sl<AuthRepositoryImpl>()));
   sl.registerLazySingleton(() => RegisterUser(sl<AuthRepositoryImpl>()));
+  sl.registerLazySingleton(() => GoogleLoginUser(sl<AuthRepositoryImpl>())); // Added
   sl.registerFactory(
         () => AuthCubit(
       sl<LoginUser>(),
       sl<RegisterUser>(),
+      sl<GoogleLoginUser>(), // Added
       sl<AuthRepositoryImpl>(),
     ),
   );

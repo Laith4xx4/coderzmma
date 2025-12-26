@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MAA | Login</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body style="display: flex; align-items: center; justify-content: center; height: 100vh; background: var(--gradient);">
+    <div class="card" style="width: 90%; max-width: 400px; padding: 3rem;">
+        <h2 style="text-align: center; margin-bottom: 2rem; letter-spacing: 2px;">MAA ACCESS</h2>
+        <form id="login-form">
+            <div style="margin-bottom: 1.5rem;">
+                <label style="display: block; margin-bottom: 0.5rem; color: var(--text-light); font-size: 0.75rem; font-weight: 700;">USERNAME</label>
+                <input type="text" id="username" required placeholder="Enter username" style="width: 100%; padding: 1rem; border-radius: 8px; border: 1px solid rgba(0,0,0,0.1); background: var(--background); outline: none;">
+            </div>
+            <div style="margin-bottom: 2rem;">
+                <label style="display: block; margin-bottom: 0.5rem; color: var(--text-light); font-size: 0.75rem; font-weight: 700;">PASSWORD</label>
+                <input type="password" id="password" required placeholder="••••••••" style="width: 100%; padding: 1rem; border-radius: 8px; border: 1px solid rgba(0,0,0,0.1); background: var(--background); outline: none;">
+            </div>
+            <button type="submit" class="btn btn-primary" style="width: 100%; justify-content: center; padding: 1rem;">SIGN IN</button>
+            <p id="error-message" style="color: var(--error); margin-top: 1.5rem; font-size: 0.85rem; text-align: center; display: none; font-weight: 600;"></p>
+        </form>
+        <div style="text-align: center; margin-top: 2rem;">
+            <a href="index.html" style="color: var(--text-light); text-decoration: none; font-size: 0.8rem; font-weight: 600;">← RETURN TO WEBSITE</a>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('login-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            const errorMsg = document.getElementById('error-message');
+            const btn = e.target.querySelector('button');
+
+            btn.disabled = true;
+            btn.textContent = 'AUTHENTICATING...';
+            errorMsg.style.display = 'none';
+
+            try {
+                const response = await fetch('/api/Auth/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, password })
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    localStorage.setItem('maa_token', data.token);
+                    localStorage.setItem('maa_user', username);
+                    window.location.href = 'index.html';
+                } else {
+                    const data = await response.json();
+                    errorMsg.textContent = data.message || 'Invalid credentials.';
+                    errorMsg.style.display = 'block';
+                }
+            } catch (error) {
+                errorMsg.textContent = 'Server connection failed.';
+                errorMsg.style.display = 'block';
+            } finally {
+                btn.disabled = false;
+                btn.textContent = 'SIGN IN';
+            }
+        });
+    </script>
+</body>
+</html>

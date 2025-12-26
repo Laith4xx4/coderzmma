@@ -355,4 +355,77 @@ class AuthRepositoryImpl implements AuthRepository {
       throw Exception('Register failed: ${response.body}');
     }
   }
+
+  // ====================== 🔵 تسجيل الدخول بجوجل ======================
+  @override
+  Future<User> googleLogin(String idToken) async {
+    final url = Uri.parse('${baseUrl.endsWith('/') ? baseUrl : '$baseUrl/'}Auth/google-login');
+    final response = await http.post(
+      url,
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({
+        'idToken': idToken,
+      }),
+    );
+
+    if (response.statusCode == 200) {
+      final Map<String, dynamic> data = jsonDecode(response.body);
+      final token = await _saveTokenFromResponse(data);
+      final prefs = await SharedPreferences.getInstance();
+
+      // reuse the logic from login to extract info from token
+      // We can duplicate the logic here or extract it to a method.
+      // For now, I'll duplicate the extraction logic for safety/speed.
+      
+      print('---------------- GOOGLE LOGIN DEBUG INFO ----------------');
+       String? extractedUserName;
+      String? extractedUserId;
+      String? extractedRole;
+      if (token != null) {
+        try {
+          print('TOKEN: $token');
+          Map<String, dynamic> decoded = JwtDecoder.decode(token);
+          
+          extractedUserName = decoded['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name']
+              ?? decoded['unique_name']
+              ?? decoded['sub'];
+          
+          extractedUserId = decoded['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier']
+              ?? decoded['nameid']
+              ?? decoded['sub'];
+          
+          extractedRole = decoded['http://schemas.microsoft.com/ws/2008/06/identity/claims/role']
+              ?? decoded['role'];
+        } catch (e) {
+          print('❌ ERROR DECODING TOKEN: $e');
+        }
+      }
+
+      if (extractedRole == null) {
+         extractedRole = 'Member'; // Default for Google Login usually
+      }
+
+      // Save to prefs
+       if (extractedUserId != null) await prefs.setString('userGuid', extractedUserId);
+       if (extractedUserName != null) await prefs.setString('userName', extractedUserName);
+       if (extractedRole != null) await prefs.setString('userRole', extractedRole!);
+
+      // Attempt to fetch numeric ID if needed (for member/coach)
+       int? numericId;
+      if (extractedRole != null && token != null && extractedUserName != null) {
+         numericId = await _fetchNumericId(extractedRole!, token, extractedUserName.toString());
+         if (numericId != null) await prefs.setInt('userId', numericId);
+      }
+
+      final normalized = {
+        ...data,
+        if (token != null) 'token': token,
+        if (extractedUserName != null) 'userName': extractedUserName,
+      };
+
+      return UserModel.fromJson(normalized);
+    } else {
+      throw Exception('Google Login failed (${response.statusCode}): ${response.body}');
+    }
+  }
 }

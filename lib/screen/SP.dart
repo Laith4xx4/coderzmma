@@ -47,20 +47,22 @@ class _SpState extends State<Sp> with SingleTickerProviderStateMixin {
 
   Future<void> checkToken() async {
     // 1. نبدأ بجلب البيانات من الذاكرة بالتوازي مع الأنيميشن
-    final prefs = await SharedPreferences.getInstance();
-    final String token = prefs.getString("token") ?? "";
+    // final prefs = await SharedPreferences.getInstance();
+    // final String token = prefs.getString("token") ?? "";
 
-    // 2. ننتظر فقط الحد الأدنى المطلوب للأنيميشن لكي لا يظهر الانتقال مفاجئاً (مثلاً ثانية واحدة بدلاً من 3)
+    // حذف التوكن عند بدء التطبيق لضمان عدم الحفظ (بناءً على طلب المستخدم)
+    // await prefs.remove('token'); 
+
+    // 2. ننتظر فقط الحد الأدنى المطلوب للأنيميشن
     await Future.delayed(const Duration(milliseconds: 1500));
 
     if (!mounted) return;
 
-    // 3. استخدام انتقال ناعم (PageRouteBuilder) بدلاً من الانتقال الافتراضي لتقليل الشعور ببطء النظام
+    // 3. الانتقال دائماً لشاشة تسجيل الدخول
     Navigator.pushReplacement(
       context,
       PageRouteBuilder(
-        pageBuilder: (context, animation, secondaryAnimation) =>
-        token.isNotEmpty ? const AnimatedNavExample() : const LoginScreen(),
+        pageBuilder: (context, animation, secondaryAnimation) => const LoginScreen(),
         transitionsBuilder: (context, animation, secondaryAnimation, child) {
           return FadeTransition(opacity: animation, child: child);
         },

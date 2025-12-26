@@ -136,7 +136,7 @@ class _HomeState extends State<Home> with AutomaticKeepAliveClientMixin {
                     const _SectionHeader(title: 'Quick Management'),
                     const SizedBox(height: AppTheme.spacingMD),
 
-                    _QuickAccessList(isAdmin: _isAdmin, isCoach: _isCoach),
+                    _QuickAccessList(isAdmin: _isAdmin, isCoach: _isCoach, isClient: _isClient),
 
                     const SizedBox(height: AppTheme.spacingXL),
                     Row(
@@ -189,12 +189,12 @@ class _HomeState extends State<Home> with AutomaticKeepAliveClientMixin {
               userRole?.toUpperCase() ?? 'USER',
               style: const TextStyle(
                 color: Colors.white,
-                fontSize: 18,
+                fontSize: 16, // Reduced font size to prevent overflow
                 fontWeight: FontWeight.w800,
                 letterSpacing: 1.0,
               ),
             ),
-            const SizedBox(height: 2),
+            // Replaced sized box with smaller one
             Text(
               formattedDate,
               style: TextStyle(
@@ -274,37 +274,60 @@ class _StatisticsGrid extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GridView.count(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      crossAxisCount: 2,
-      mainAxisSpacing: AppTheme.spacingMD,
-      crossAxisSpacing: AppTheme.spacingMD,
-      childAspectRatio: 1.1,
-      children: [
+    // If Client, filter out Bookings and Analytics/Feedbacks if requested
+    // User requested "No booking and feedback", assuming they want to see Sessions?
+    // User said: "I don't want booking and feedback"
+    // Wait, typically Clients see Sessions.
+    // If Admin/Coach -> Members. If !!Admin/Coach -> Feedbacks.
+    // If Client, we hide Feedbacks.
+    
+    // Let's filter the items list logic
+    final children = <Widget>[];
+
+    // 1. Sessions (Always visible)
+    children.add(
+      _StatCard(
+        title: 'Sessions',
+        subtitle: 'Active track',
+        icon: Icons.calendar_today_rounded,
+        onTap: () {
+          context.read<SessionCubit>().loadSessions();
+          Navigator.push(context, _createRoute(const SessionListPage()));
+        },
+      ),
+    );
+
+    // 2. Members (Admin/Coach) OR Feedbacks (Member/Client?)
+    // User said "No feedback" for Client.
+    if (isAdmin || isCoach) {
+      children.add(
         _StatCard(
-          title: 'Sessions',
-          subtitle: 'Active track',
-          icon: Icons.calendar_today_rounded,
+          title: 'Members',
+          subtitle: 'Directory',
+          icon: Icons.people_outline_rounded,
           onTap: () {
-            context.read<SessionCubit>().loadSessions();
-            Navigator.push(context, _createRoute(const SessionListPage()));
+            context.read<MemberCubit>().loadMembers();
+            Navigator.push(context, _createRoute(const MemberListPage()));
           },
         ),
+      );
+    } else if (!isClient) { // Hide Feedback for Client
+      children.add(
         _StatCard(
-          title: isAdmin || isCoach ? 'Members' : 'Feedbacks',
-          subtitle: isAdmin || isCoach ? 'Directory' : 'Your voice',
-          icon: isAdmin || isCoach ? Icons.people_outline_rounded : Icons.chat_bubble_outline_rounded,
+          title: 'Feedbacks',
+          subtitle: 'Your voice',
+          icon: Icons.chat_bubble_outline_rounded,
           onTap: () {
-            if (isAdmin || isCoach) {
-              context.read<MemberCubit>().loadMembers();
-              Navigator.push(context, _createRoute(const MemberListPage()));
-            } else {
-              context.read<FeedbackCubit>().loadFeedbacks();
-              Navigator.push(context, _createRoute(const FeedbackListPage()));
-            }
+            context.read<FeedbackCubit>().loadFeedbacks();
+            Navigator.push(context, _createRoute(const FeedbackListPage()));
           },
         ),
+      );
+    }
+
+    // 3. Bookings (Hide for Client)
+    if (!isClient) {
+      children.add(
         _StatCard(
           title: 'Bookings',
           subtitle: 'Schedule',
@@ -314,6 +337,14 @@ class _StatisticsGrid extends StatelessWidget {
             Navigator.push(context, _createRoute(const BookingListPage()));
           },
         ),
+      );
+    }
+
+    // 4. Analytics (Hide for Client)
+    // User said "Change booking and feedback And progress".
+    // Assuming "progress" refers to "Analytics".
+    if (!isClient) {
+      children.add(
         _StatCard(
           title: 'Analytics',
           subtitle: 'Reports',
@@ -323,7 +354,17 @@ class _StatisticsGrid extends StatelessWidget {
             Navigator.push(context, _createRoute(const ProgressListPage()));
           },
         ),
-      ],
+      );
+    }
+
+    return GridView.count(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      crossAxisCount: 2,
+      mainAxisSpacing: AppTheme.spacingMD,
+      crossAxisSpacing: AppTheme.spacingMD,
+      childAspectRatio: 1.1,
+      children: children,
     );
   }
 }
@@ -386,8 +427,9 @@ class _StatCard extends StatelessWidget {
 class _QuickAccessList extends StatelessWidget {
   final bool isAdmin;
   final bool isCoach;
+  final bool isClient; // Add isClient
 
-  const _QuickAccessList({required this.isAdmin, required this.isCoach});
+  const _QuickAccessList({required this.isAdmin, required this.isCoach, required this.isClient});
 
   @override
   Widget build(BuildContext context) {
@@ -395,6 +437,8 @@ class _QuickAccessList extends StatelessWidget {
       decoration: AppTheme.cardDecoration(),
       child: Column(
         children: [
+          // Hide Feedback for Client
+          if (!isClient)
           _QuickTile(
             title: 'Customer Feedbacks',
             icon: Icons.star_outline_rounded,

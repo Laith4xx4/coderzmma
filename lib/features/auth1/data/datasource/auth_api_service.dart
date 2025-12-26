@@ -33,6 +33,34 @@ class AuthApiService {
     }
   }
 
+  // =================== Google Login ===================
+  Future<Map<String, dynamic>> googleLogin(String idToken) async {
+    final response = await http.post(
+      Uri.parse('$_baseUrl${ApiStrings.baseUrl.endsWith('/') ? '' : '/'}Auth/google-login'), // Correct endpoint construction
+      headers: {'Content-Type': 'application/json'},
+      body: json.encode({'idToken': idToken}),
+    );
+
+    if (response.statusCode == 200) {
+      final data = json.decode(response.body);
+      // We expect a JWT token back. Structure might vary, but assuming similar to login response
+      // Backend returns { "Token": "..." }
+      
+      final token = data['token']?.toString() ?? data['Token']?.toString() ?? '';
+      
+      // If we need user details immediately, we should call 'me' endpoint or decode token
+      // For consistency with other methods, let's just return the token and basic info if available
+      // Ideally backend should return full user object like login, but current backend code shows only Token.
+      // So we will return what we have.
+      return {
+        'token': token,
+      }; 
+    } else {
+      final errorData = json.decode(response.body);
+      throw Exception(errorData['message']?.toString() ?? 'Failed to login with Google');
+    }
+  }
+
   // =================== Register ===================
   Future<Map<String, dynamic>> register({
     required String userName, // Added userName

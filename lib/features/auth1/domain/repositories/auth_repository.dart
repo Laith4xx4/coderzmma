@@ -2,7 +2,7 @@ import 'package:maa3/features/auth1/domain/entities/user.dart';
 
 abstract class AuthRepository {
   Future<User> login(String email, String password);
-
+  Future<User> googleLogin(String idToken);
   Future<User> register({
     required String userName,
     required String email,

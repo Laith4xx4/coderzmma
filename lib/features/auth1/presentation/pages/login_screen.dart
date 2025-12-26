@@ -29,8 +29,6 @@ class _LoginScreenState extends State<LoginScreen> {
         listener: (context, state) async {
           if (state is AuthSuccess) {
             print("---------------- LOGIN DEBUG INFO ----------------");
-            print("TOKEN: ${state.token}");
-
             SharedPreferences prefs = await SharedPreferences.getInstance();
 
             // 1. فك تشفير التوكن لاستخراج الاسم الحقيقي
@@ -40,22 +38,36 @@ class _LoginScreenState extends State<LoginScreen> {
             String? nameFromToken = decodedToken['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name']
                 ?? decodedToken['unique_name']
                 ?? decodedToken['sub'];
+            
+            // استخراج firstName و lastName من JWT
+            String? firstName = decodedToken['firstName'];
+            String? lastName = decodedToken['lastName'];
 
             print("EXTRACTED NAME FROM TOKEN: $nameFromToken");
+            print("EXTRACTED FIRST NAME: $firstName");
+            print("EXTRACTED LAST NAME: $lastName");
 
             // 2. حفظ التوكن والمعلومات الأساسية
             await prefs.setString("token", state.token);
             await prefs.setString("userEmail", state.user.email);
 
-            // ✅ الحل النهائي: حفظ الاسم المستخرج من التوكن لضمان ظهوره في البروفايل
-            // إذا كان المستخرج فارغاً، نستخدم القيمة من الموديل، وإذا كانت فارغة نضع "User"
-            String nameToSave = (nameFromToken != null && nameFromToken.isNotEmpty)
-                ? nameFromToken
-                : (state.user.userName.isNotEmpty ? state.user.userName : "User");
+            // ✅ حفظ الاسم: استخدم firstName + lastName إذا موجودان (Google Sign-In)، وإلا استخدم المنطق القديم
+            String nameToSave;
+            if (firstName != null && firstName.isNotEmpty && lastName != null && lastName.isNotEmpty) {
+              // Google Sign-In - استخدم الاسم الكامل
+              nameToSave = "${firstName} ${lastName}".trim();
+            } else {
+              // تسجيل دخول عادي - استخدم المنطق القديم
+              nameToSave = (nameFromToken != null && nameFromToken.isNotEmpty)
+                  ? nameFromToken
+                  : (state.user.userName.isNotEmpty ? state.user.userName : "User");
+            }
 
             await prefs.setString("userName", nameToSave);
-            await prefs.setString("firstName", state.user.firstName ?? "");
-            await prefs.setString("lastName", state.user.lastName ?? "");
+            
+            // حفظ firstName و lastName
+            await prefs.setString("firstName", firstName ?? state.user.firstName ?? "");
+            await prefs.setString("lastName", lastName ?? state.user.lastName ?? "");
 
             // 3. استخراج الدور (Role)
             final String realRole = decodedToken['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'] ??
@@ -122,6 +134,42 @@ class _LoginScreenState extends State<LoginScreen> {
                           child: const Text(
                             'LOGIN',
                             style: TextStyle(letterSpacing: 1.5, fontWeight: FontWeight.bold),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+                      Row(
+                        children: [
+                          Expanded(child: Divider(color: Colors.grey.shade400)),
+                          const Padding(
+                            padding: EdgeInsets.symmetric(horizontal: 10),
+                            child: Text("OR", style: TextStyle(color: Colors.grey)),
+                          ),
+                          Expanded(child: Divider(color: Colors.grey.shade400)),
+                        ],
+                      ),
+                      const SizedBox(height: 20),
+                      SizedBox(
+                        width: double.infinity,
+                        child: OutlinedButton.icon(
+                          onPressed: () {
+                            context.read<AuthCubit>().googleSignIn();
+                          },
+                          icon: const Icon(Icons.login, color: Colors.blue), // Placeholder for Google Icon
+                          label: const Text(
+                            'Sign in with Google',
+                            style: TextStyle(
+                                letterSpacing: 1.0, 
+                                fontWeight: FontWeight.bold,
+                                color: AppTheme.textPrimary
+                            ),
+                          ),
+                          style: OutlinedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(vertical: 15),
+                            side: const BorderSide(color: Colors.grey),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
+                            ),
                           ),
                         ),
                       ),

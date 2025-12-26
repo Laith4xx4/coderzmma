@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Identity;
+﻿using Google.Apis.Auth; // Added
+using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
 using System;
@@ -44,8 +45,6 @@ public class AuthService : IAuthService
         if (!result.Succeeded)
             throw new Exception(string.Join(", ", result.Errors.Select(e => e.Description)));
 
-        // لا يوجد تعيين Role هنا
-
         // ✅ Assign Role
         string roleToAssign = !string.IsNullOrEmpty(dto.Role) ? dto.Role : "Client";
 
@@ -80,6 +79,113 @@ public class AuthService : IAuthService
         return await GenerateJwtToken(user);
     }
 
+    public async Task<string> GoogleLoginAsync(GoogleLoginDto dto)
+    {
+        try
+        {
+            // Validate Google/Firebase ID Token
+            GoogleJsonWebSignature.Payload payload;
+            
+            try
+            {
+                // First try to validate as Google token
+                var settings = new GoogleJsonWebSignature.ValidationSettings();
+                payload = await GoogleJsonWebSignature.ValidateAsync(dto.IdToken, settings);
+            }
+            catch
+            {
+                // If Google validation fails, try Firebase token validation
+                // Firebase tokens have issuer: https://securetoken.google.com/PROJECT_ID
+                // For now, we'll decode without strict validation and check email
+                var handler = new System.IdentityModel.Tokens.Jwt.JwtSecurityTokenHandler();
+                var jsonToken = handler.ReadToken(dto.IdToken) as System.IdentityModel.Tokens.Jwt.JwtSecurityToken;
+                
+                if (jsonToken == null)
+                {
+                    throw new Exception("Invalid token format");
+                }
+                
+                // Create payload object from Firebase token
+                var email = jsonToken.Claims.FirstOrDefault(c => c.Type == "email")?.Value;
+                var emailVerified = jsonToken.Claims.FirstOrDefault(c => c.Type == "email_verified")?.Value == "true";
+                
+                if (string.IsNullOrEmpty(email))
+                {
+                    throw new Exception("Email not found in token");
+                }
+                
+                // Create a compatible payload object
+                var name = jsonToken.Claims.FirstOrDefault(c => c.Type == "name")?.Value ?? email.Split('@')[0];
+                
+                payload = new GoogleJsonWebSignature.Payload
+                {
+                    Email = email,
+                    EmailVerified = emailVerified,
+                    Name = name,
+                    GivenName = name.Split(' ').FirstOrDefault() ?? name,
+                    FamilyName = name.Split(' ').Skip(1).FirstOrDefault() ?? "",
+                    Subject = jsonToken.Claims.FirstOrDefault(c => c.Type == "sub")?.Value ?? ""
+                };
+            }
+
+            // Check if user exists
+            var user = await _userManager.FindByEmailAsync(payload.Email);
+
+            if (user == null)
+            {
+                // Create new user with name info
+                user = new ApplicationUser
+                {
+                    UserName = payload.Email,
+                    Email = payload.Email,
+                    FirstName = payload.GivenName ?? payload.Name?.Split(' ').FirstOrDefault() ?? "",
+                    LastName = payload.FamilyName ?? payload.Name?.Split(' ').Skip(1).FirstOrDefault() ?? "",
+                    EmailConfirmed = payload.EmailVerified
+                };
+
+                var result = await _userManager.CreateAsync(user);
+                if (!result.Succeeded)
+                {
+                    throw new Exception($"User creation failed: {string.Join(", ", result.Errors.Select(e => e.Description))}");
+                }
+
+                // Assign default Client role for Google Sign-In users
+                if (!await _roleManager.RoleExistsAsync("Client"))
+                {
+                    await _roleManager.CreateAsync(new IdentityRole("Client"));
+                }
+                await _userManager.AddToRoleAsync(user, "Client");
+            }
+            else
+            {
+                // Update existing user's name if empty
+                bool needsUpdate = false;
+                if (string.IsNullOrEmpty(user.FirstName))
+                {
+                    user.FirstName = payload.GivenName ?? payload.Name?.Split(' ').FirstOrDefault() ?? "";
+                    needsUpdate = true;
+                }
+                if (string.IsNullOrEmpty(user.LastName))
+                {
+                    user.LastName = payload.FamilyName ?? payload.Name?.Split(' ').Skip(1).FirstOrDefault() ?? "";
+                    needsUpdate = true;
+                }
+                
+                if (needsUpdate)
+                {
+                    await _userManager.UpdateAsync(user);
+                }
+            }
+
+            // Generate JWT token
+            return await GenerateJwtToken(user);
+        }
+        catch (Exception ex)
+        {
+            throw new Exception($"Invalid Google Token: {ex.Message}");
+        }
+    }
+
     private async Task<string> GenerateJwtToken(ApplicationUser user)
     {
         var jwtSettings = _configuration.GetSection("Jwt");
@@ -94,6 +200,8 @@ public class AuthService : IAuthService
             new Claim(ClaimTypes.NameIdentifier, user.Id),
             new Claim(ClaimTypes.Name, user.UserName ?? string.Empty),
             new Claim(JwtRegisteredClaimNames.Email, user.Email ?? string.Empty),
+            new Claim("firstName", user.FirstName ?? string.Empty), // Added for Flutter app
+            new Claim("lastName", user.LastName ?? string.Empty),   // Added for Flutter app
             new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
         };
 

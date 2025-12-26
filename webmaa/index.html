@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MAA | Martial Arts Academy Web</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet">
+</head>
+<body>
+    <nav id="navbar">
+        <div class="logo">MAA</div>
+        <div class="nav-links">
+            <a href="#home">Home</a>
+            <a href="#about">About</a>
+            <a href="#classes">Classes</a>
+            <a href="#portal">User Portal</a>
+        </div>
+        <a href="login.html" class="btn btn-primary" style="padding: 0.5rem 1.5rem; font-size: 0.8rem;">Login</a>
+    </nav>
+
+    <section class="hero" id="home">
+        <div class="hero-content">
+            <h1>Martial Arts<br>Academy</h1>
+            <p class="subtitle">PREMIUM TRAINING EXPERIENCE ON YOUR WEB</p>
+            <a href="#portal" class="btn btn-primary">Enter Portal</a>
+        </div>
+    </section>
+
+    <section class="dashboard-preview" id="portal">
+        <div class="grid">
+            <div class="card stat-item">
+                <div class="stat-value" id="session-count">--</div>
+                <div class="stat-label">Active Sessions</div>
+            </div>
+            <div class="card stat-item">
+                <div class="stat-value" id="member-count">--</div>
+                <div class="stat-label">Academy Members</div>
+            </div>
+            <div class="card stat-item">
+                <div class="stat-value" id="coach-count">--</div>
+                <div class="stat-label">Elite Coaches</div>
+            </div>
+        </div>
+    </section>
+
+    <script src="js/app.js"></script>
+</body>
+</html>

@@ -47,5 +47,22 @@ namespace WebApplication1.Controllers
                 return Unauthorized(new { Message = ex.Message });
             }
         }
+
+        // -----------------------------
+        // Google Login
+        // -----------------------------
+        [HttpPost("google-login")]
+        public async Task<IActionResult> GoogleLogin([FromBody] GoogleLoginDto model)
+        {
+            try
+            {
+                var token = await _authService.GoogleLoginAsync(model);
+                return Ok(new { Token = token });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { Message = ex.Message });
+            }
+        }
     }
 }

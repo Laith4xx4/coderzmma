@@ -55,7 +55,15 @@ class _FeedbackListPageState extends State<FeedbackListPage> {
       }
     }
 
-    _currentUserName = prefs.getString('userName') ?? 'My Account';
+    // جلب الاسم: firstName + lastName إذا موجود (Google Sign-In)، وإلا userName العادي
+    String? firstName = prefs.getString('firstName');
+    String? lastName = prefs.getString('lastName');
+    
+    if (firstName != null && firstName.isNotEmpty && lastName != null && lastName.isNotEmpty) {
+      _currentUserName = '$firstName $lastName';
+    } else {
+      _currentUserName = prefs.getString('userName') ?? 'My Account';
+    }
 
     setState(() => _isLoading = false);
 

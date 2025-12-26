@@ -29,6 +29,7 @@ class _PersonState extends State<Person> with AutomaticKeepAliveClientMixin {
   String userRole = "Member";
   bool isLoading = true;
   bool _isAdmin = false;
+  bool _isClient = false; // Add _isClient state
 
   @override
   bool get wantKeepAlive => true;
@@ -72,6 +73,7 @@ class _PersonState extends State<Person> with AutomaticKeepAliveClientMixin {
 
       userRole = prefs.getString("userRole") ?? "Admin";
       _isAdmin = userRole.toLowerCase() == 'admin';
+      _isClient = userRole.toLowerCase() == 'client'; // Check client role
       isLoading = false;
     });
   }
@@ -93,6 +95,7 @@ class _PersonState extends State<Person> with AutomaticKeepAliveClientMixin {
               displayName = name;
               userRole = newRole;
               _isAdmin = newRole.toLowerCase() == 'admin';
+              _isClient = newRole.toLowerCase() == 'client';
             });
           }
         }
@@ -116,6 +119,7 @@ class _PersonState extends State<Person> with AutomaticKeepAliveClientMixin {
                   const SizedBox(height: 16),
                   _QuickActions(
                     isAdmin: _isAdmin,
+                    isClient: _isClient,
                     onNavigate: _navigateTo,
                   ),
                   const SizedBox(height: 32),
@@ -275,9 +279,14 @@ class _SectionHeader extends StatelessWidget {
 
 class _QuickActions extends StatelessWidget {
   final bool isAdmin;
+  final bool isClient;
   final void Function(Widget) onNavigate;
 
-  const _QuickActions({required this.isAdmin, required this.onNavigate});
+  const _QuickActions({
+    required this.isAdmin,
+    required this.isClient,
+    required this.onNavigate,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -305,21 +314,33 @@ class _QuickActions extends StatelessWidget {
           title: 'Sessions',
           onTap: () => onNavigate(const SessionListPage()),
         ),
+        
+        // Hide Attendance for Client
+        if (!isClient)
         _ActionCard(
           icon: Icons.assignment_turned_in_rounded,
           title: 'Attendance',
           onTap: () => onNavigate(const AttendanceListPage()),
         ),
+        
+        // Hide Bookings for Client
+        if (!isClient)
         _ActionCard(
           icon: Icons.bookmark_added_rounded,
           title: 'Bookings',
           onTap: () => onNavigate(const BookingListPage()),
         ),
+        
+        // Hide Progress for Client
+        if (!isClient)
         _ActionCard(
           icon: Icons.bar_chart_rounded,
           title: 'Progress Stats',
           onTap: () => onNavigate(const ProgressListPage()),
         ),
+
+        // Hide Feedbacks for Client
+        if (!isClient)
         _ActionCard(
           icon: Icons.rate_review_rounded,
           title: 'Feedbacks',

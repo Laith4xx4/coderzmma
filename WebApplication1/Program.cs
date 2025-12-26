@@ -10,6 +10,7 @@ using System.Security.Claims;
 using System.IdentityModel.Tokens.Jwt;
 using AutoMapper;
 using System.Text.Json.Serialization;
+using Microsoft.Extensions.FileProviders; // Added for webmaa support
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -131,6 +132,21 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
+// ✅ Serve webmaa as the main web portal
+app.UseDefaultFiles(new DefaultFilesOptions
+{
+    FileProvider = new PhysicalFileProvider(
+        Path.Combine(app.Environment.ContentRootPath, "webmaa")),
+    RequestPath = ""
+});
+app.UseStaticFiles(new StaticFileOptions
+{
+    FileProvider = new PhysicalFileProvider(
+        Path.Combine(app.Environment.ContentRootPath, "webmaa")),
+    RequestPath = ""
+});
+
 app.UseCors("AllowFrontend");
 app.UseAuthentication();
 app.UseAuthorization();
