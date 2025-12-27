@@ -9,6 +9,10 @@ import 'package:maa3/features/attendance/data/models/create_attendance_model.dar
 import 'package:maa3/features/attendance/domain/entities/attendance_entity.dart';
 import 'package:maa3/features/attendance/presentation/bloc/attendance_cubit.dart';
 import 'package:maa3/features/attendance/presentation/bloc/attendance_state.dart';
+import 'package:maa3/features/sessions/presentation/bloc/session_cubit.dart';
+import 'package:maa3/features/sessions/presentation/bloc/session_state.dart';
+import 'package:maa3/features/memberpro/presentation/bloc/member_cubit.dart';
+import 'package:maa3/features/memberpro/presentation/bloc/member_state.dart';
 
 class AttendanceListPage extends StatefulWidget {
   const AttendanceListPage({super.key});
@@ -25,6 +29,8 @@ class _AttendanceListPageState extends State<AttendanceListPage> {
     super.initState();
     _checkPermissions();
     context.read<AttendanceCubit>().loadAttendances();
+    context.read<SessionCubit>().loadSessions();
+    context.read<MemberCubit>().loadMembers();
   }
 
   Future<void> _checkPermissions() async {
@@ -99,9 +105,18 @@ class _AttendanceListPageState extends State<AttendanceListPage> {
   // نافذة إضافة حضور يدوي (مبسطة)
   void _showAddAttendanceDialog(BuildContext context) {
     final _formKey = GlobalKey<FormState>();
-    final TextEditingController _sessionIdController = TextEditingController();
-    final TextEditingController _memberIdController = TextEditingController();
-    String selectedStatus = 'Present'; // القيمة الظاهرة في القائمة
+    int? selectedSessionId;
+    int? selectedMemberId;
+    String selectedStatus = 'Present';
+
+    final sessionsState = context.read<SessionCubit>().state;
+    final membersState = context.read<MemberCubit>().state;
+
+    List<dynamic> sessions = [];
+    List<dynamic> members = [];
+
+    if (sessionsState is SessionsLoaded) sessions = sessionsState.sessions;
+    if (membersState is MembersLoaded) members = membersState.members;
 
     showDialog(
       context: context,
@@ -114,18 +129,28 @@ class _AttendanceListPageState extends State<AttendanceListPage> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  TextFormField(
-                    controller: _sessionIdController,
-                    decoration: const InputDecoration(labelText: 'Session ID'),
-                    keyboardType: TextInputType.number,
-                    validator: (value) => value!.isEmpty ? 'Enter Session ID' : null,
+                  DropdownButtonFormField<int>(
+                    decoration: const InputDecoration(labelText: 'Session'),
+                    items: sessions.map<DropdownMenuItem<int>>((session) {
+                      return DropdownMenuItem<int>(
+                        value: session.id,
+                        child: Text(session.sessionName.isNotEmpty ? session.sessionName : 'Session #${session.id}'),
+                      );
+                    }).toList(),
+                    onChanged: (value) => selectedSessionId = value,
+                    validator: (value) => value == null ? 'Select a session' : null,
                   ),
-                  const SizedBox(height: 8),
-                  TextFormField(
-                    controller: _memberIdController,
-                    decoration: const InputDecoration(labelText: 'Member ID'),
-                    keyboardType: TextInputType.number,
-                    validator: (value) => value!.isEmpty ? 'Enter Member ID' : null,
+                  const SizedBox(height: 16),
+                  DropdownButtonFormField<int>(
+                    decoration: const InputDecoration(labelText: 'Member'),
+                    items: members.map<DropdownMenuItem<int>>((member) {
+                      return DropdownMenuItem<int>(
+                        value: member.id,
+                        child: Text(member.userName),
+                      );
+                    }).toList(),
+                    onChanged: (value) => selectedMemberId = value,
+                    validator: (value) => value == null ? 'Select a member' : null,
                   ),
                   const SizedBox(height: 16),
                   DropdownButtonFormField<String>(
@@ -150,7 +175,9 @@ class _AttendanceListPageState extends State<AttendanceListPage> {
             ),
             ElevatedButton(
               onPressed: () {
-                if (_formKey.currentState!.validate()) {
+                if (_formKey.currentState!.validate() &&
+                    selectedSessionId != null &&
+                    selectedMemberId != null) {
                   // تحويل الحالة النصية إلى رقم (حسب نظام الباك اند لديك)
                   // مثال: 1=حاضر، 0=غائب، 2=متأخر، 3=معذور
                   int statusCode;
@@ -172,8 +199,8 @@ class _AttendanceListPageState extends State<AttendanceListPage> {
                   }
 
                   final data = CreateAttendanceModel(
-                    sessionId: int.parse(_sessionIdController.text),
-                    memberId: int.parse(_memberIdController.text),
+                    sessionId: selectedSessionId!,
+                    memberId: selectedMemberId!,
                     status: statusCode, // الآن نرسل int بدلاً من String
                   );
 

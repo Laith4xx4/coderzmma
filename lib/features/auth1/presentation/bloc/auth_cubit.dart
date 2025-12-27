@@ -67,6 +67,7 @@ class AuthCubit extends Cubit<AuthState> {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString("token", user.token ?? "");
       await prefs.setString("userEmail", user.email);
+      await prefs.setString("userId", user.id); // Save User ID
 
       emit(AuthSuccess(token: user.token ?? '', user: user));
       
@@ -92,6 +93,7 @@ class AuthCubit extends Cubit<AuthState> {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString("token", user.token ?? "");
       await prefs.setString("userEmail", user.email);
+      await prefs.setString("userId", user.id); // Add this line
 
       emit(AuthSuccess(token: user.token ?? '', user: user));
 
@@ -124,6 +126,11 @@ class AuthCubit extends Cubit<AuthState> {
         phoneNumber: phoneNumber,
         dateOfBirth: dateOfBirth,
       );
+
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString("token", user.token ?? "");
+      await prefs.setString("userEmail", user.email);
+      await prefs.setString("userId", user.id);
 
       emit(AuthSuccess(token: user.token ?? '', user: user));
     } catch (e) {

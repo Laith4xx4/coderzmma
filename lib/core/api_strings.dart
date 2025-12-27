@@ -1,5 +1,21 @@
+import 'dart:io';
+import 'package:flutter/foundation.dart';
+
 class ApiStrings {
-  static const String baseUrl = 'http://192.168.100.66:5086/api';
+  static String get baseUrl {
+    // إذا كنا نعمل على الويب، نستخدم النطاق المحلي العادي
+    if (kIsWeb) return 'http://localhost:5086/api';
+    
+    // إذا كنا على الأندرويد، نتحقق مما إذا كنا على المحاكي
+    if (Platform.isAndroid) {
+      // نستخدم IP الجهاز المضيف (الكمبيوتر) للعمل على الهاتف الحقيقي
+      // 192.168.100.66 هو عنوان جهازك الحالي
+      return 'http://192.168.100.66:5086/api';
+    }
+    
+    // للـ iOS أو غيره
+    return 'http://localhost:5086/api';
+  }
 
   // Auth
   static const String loginEndpoint = '/Auth/login';

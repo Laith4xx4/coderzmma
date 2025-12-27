@@ -174,7 +174,7 @@ class _BookingListPageState extends State<BookingListPage> {
                     items: sessions.map<DropdownMenuItem<int>>((session) {
                       return DropdownMenuItem<int>(
                         value: session.id,
-                        child: Text('Session #${session.id}'),
+                        child: Text(session.sessionName.isNotEmpty ? session.sessionName : 'Session #${session.id}'),
                       );
                     }).toList(),
                     onChanged: (value) => selectedSessionId = value,

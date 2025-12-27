@@ -9,6 +9,7 @@
         public decimal Rating { get; set; }
         public string? Comments { get; set; }
         public DateTime Timestamp { get; set; }
+        public string SenderType { get; set; } = "Member"; // New field
 
         public MemberProfile Member { get; set; }
         public CoachProfile Coach { get; set; }

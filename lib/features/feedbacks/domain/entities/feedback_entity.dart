@@ -9,6 +9,7 @@ class FeedbackEntity {
   final double rating;
   final String? comments;
   final DateTime timestamp;
+  final String senderType;
 
   FeedbackEntity({
     required this.id,
@@ -21,6 +22,7 @@ class FeedbackEntity {
     required this.rating,
     this.comments,
     required this.timestamp,
+    required this.senderType,
   });
 }
 

@@ -22,6 +22,7 @@ class FeedbackRepositoryImpl implements FeedbackRepository {
       rating: m.rating,
       comments: m.comments,
       timestamp: m.timestamp,
+      senderType: m.senderType,
     );
   }
 

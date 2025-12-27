@@ -9,7 +9,10 @@ namespace WebApplication1.MappingProfiles
         public SessionMapping()
         {
             CreateMap<Session, SessionResponseDto>()
-                .ForMember(dest => dest.CoachName, opt => opt.MapFrom(src => src.Coach.User.UserName))
+                .ForMember(dest => dest.CoachName, opt => opt.MapFrom(src => 
+                    (src.Coach != null && src.Coach.User != null && !string.IsNullOrEmpty(src.Coach.User.FirstName)) 
+                    ? $"{src.Coach.User.FirstName} {src.Coach.User.LastName}".Trim() 
+                    : (src.Coach != null ? src.Coach.User.UserName : "غير محدد")))
                 .ForMember(dest => dest.ClassTypeName, opt => opt.MapFrom(src => src.ClassType.Name))
                 .ForMember(dest => dest.BookingsCount, opt => opt.MapFrom(src => src.Bookings.Count))
                 .ForMember(dest => dest.AttendanceCount, opt => opt.MapFrom(src => src.Attendances.Count));

@@ -46,29 +46,40 @@ class _SpState extends State<Sp> with SingleTickerProviderStateMixin {
   }
 
   Future<void> checkToken() async {
-    // 1. نبدأ بجلب البيانات من الذاكرة بالتوازي مع الأنيميشن
-    // final prefs = await SharedPreferences.getInstance();
-    // final String token = prefs.getString("token") ?? "";
+    try {
+      // 1. نبدأ بجلب البيانات من الذاكرة بالتوازي مع الأنيميشن
+      // final prefs = await SharedPreferences.getInstance();
+      // final String token = prefs.getString("token") ?? "";
 
-    // حذف التوكن عند بدء التطبيق لضمان عدم الحفظ (بناءً على طلب المستخدم)
-    // await prefs.remove('token'); 
+      // حذف التوكن عند بدء التطبيق لضمان عدم الحفظ (بناءً على طلب المستخدم)
+      // await prefs.remove('token'); 
 
-    // 2. ننتظر فقط الحد الأدنى المطلوب للأنيميشن
-    await Future.delayed(const Duration(milliseconds: 1500));
+      // 2. ننتظر فقط الحد الأدنى المطلوب للأنيميشن
+      await Future.delayed(const Duration(milliseconds: 1500));
 
-    if (!mounted) return;
+      if (!mounted) return;
 
-    // 3. الانتقال دائماً لشاشة تسجيل الدخول
-    Navigator.pushReplacement(
-      context,
-      PageRouteBuilder(
-        pageBuilder: (context, animation, secondaryAnimation) => const LoginScreen(),
-        transitionsBuilder: (context, animation, secondaryAnimation, child) {
-          return FadeTransition(opacity: animation, child: child);
-        },
-        transitionDuration: const Duration(milliseconds: 500),
-      ),
-    );
+      // 3. الانتقال دائماً لشاشة تسجيل الدخول
+      Navigator.pushReplacement(
+        context,
+        PageRouteBuilder(
+          pageBuilder: (context, animation, secondaryAnimation) => const LoginScreen(),
+          transitionsBuilder: (context, animation, secondaryAnimation, child) {
+            return FadeTransition(opacity: animation, child: child);
+          },
+          transitionDuration: const Duration(milliseconds: 500),
+        ),
+      );
+    } catch (e, stack) {
+      debugPrint('Error in checkToken: $e\n$stack');
+      // In case of error, still try to go to login screen after a delay
+      if (mounted) {
+         Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const LoginScreen()),
+        );
+      }
+    }
   }
 
   @override

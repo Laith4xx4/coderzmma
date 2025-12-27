@@ -101,6 +101,7 @@ namespace WebApplication1.DTOs
         public decimal Rating { get; set; }
         public string? Comments { get; set; }
         public DateTime Timestamp { get; set; } = DateTime.UtcNow;
+        public string SenderType { get; set; } = "Member";
     }
 
     public class UpdateFeedbackDto
@@ -121,6 +122,7 @@ namespace WebApplication1.DTOs
         public decimal Rating { get; set; }
         public string? Comments { get; set; }
         public DateTime Timestamp { get; set; }
+        public string SenderType { get; set; } = "Member";
     }
     // ---------------- MemberProfile DTOs ----------------
     public class CreateMemberProfileDto

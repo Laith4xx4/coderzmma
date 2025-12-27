@@ -11,6 +11,10 @@ import 'package:maa3/features/progress/presentation/bloc/progress_cubit.dart';
 import 'package:maa3/features/progress/presentation/bloc/progress_state.dart';
 import 'package:maa3/features/memberpro/presentation/bloc/member_cubit.dart';
 import 'package:maa3/features/memberpro/presentation/bloc/member_state.dart';
+import 'package:maa3/features/coaches/presentation/bloc/coach_cubit.dart';
+import 'package:maa3/features/coaches/presentation/bloc/coach_state.dart';
+import 'package:fl_chart/fl_chart.dart';
+import 'dart:ui';
 
 class ProgressListPage extends StatefulWidget {
   const ProgressListPage({super.key});
@@ -21,7 +25,10 @@ class ProgressListPage extends StatefulWidget {
 
 class _ProgressListPageState extends State<ProgressListPage> {
   String _currentUserRole = '';
-  int? _currentUserId;
+  int? _memberId;
+  int? _coachId;
+  String? _identityUserId;
+  String? _currentUserName;
   bool _isAdmin = false;
   bool _isCoach = false;
   bool _isMember = false;
@@ -41,21 +48,47 @@ class _ProgressListPageState extends State<ProgressListPage> {
     _isCoach = await RoleHelper.isCoach();
     _isMember = await RoleHelper.isMember();
 
-    // جلب الـ ID
-    _currentUserId = prefs.getInt('userId');
-    if (_currentUserId == null) {
-      String? idString = prefs.getString('userId');
-      if (idString != null) {
-        _currentUserId = int.tryParse(idString);
-      }
-    }
+    _identityUserId = prefs.getString('userGuid'); 
+    _currentUserName = prefs.getString('userName');
 
     setState(() => _isLoading = false);
 
     if (mounted) {
       context.read<ProgressCubit>().loadProgress();
       context.read<MemberCubit>().loadMembers();
+      context.read<CoachCubit>().loadCoaches();
     }
+  }
+
+  bool _resolveDomainIds(BuildContext context, {MemberState? memberState, CoachState? coachState}) {
+    if (_isAdmin) return true;
+    
+    bool memberResolved = _memberId != null;
+    bool coachResolved = _coachId != null;
+    
+    if (memberResolved && coachResolved) return true;
+    if (_identityUserId == null) return false;
+
+    memberState ??= context.read<MemberCubit>().state;
+    coachState ??= context.read<CoachCubit>().state;
+
+    if (_isMember && !memberResolved && memberState is MembersLoaded) {
+      try {
+        final me = memberState.members.firstWhere((m) => m.userId == _identityUserId);
+        _memberId = me.id;
+        memberResolved = true;
+      } catch (_) {}
+    }
+    
+    if (_isCoach && !coachResolved && coachState is CoachesLoaded) {
+      try {
+        final me = coachState.coaches.firstWhere((c) => c.userId == _identityUserId);
+        _coachId = me.id;
+        coachResolved = true;
+      } catch (_) {}
+    }
+
+    return memberResolved || coachResolved;
   }
 
   List<MemberProgressEntity> _filterProgressByRole(List<MemberProgressEntity> items) {
@@ -63,8 +96,8 @@ class _ProgressListPageState extends State<ProgressListPage> {
     if (_isAdmin || _isCoach) return items;
     
     // Member يرى فقط التقدم الخاص به
-    if (_isMember) {
-      return items.where((item) => item.memberId == _currentUserId).toList();
+    if (_isMember && _memberId != null) {
+      return items.where((item) => item.memberId == _memberId).toList();
     }
     
     return items;
@@ -79,143 +112,355 @@ class _ProgressListPageState extends State<ProgressListPage> {
     if (_isLoading) {
       return Scaffold(
         backgroundColor: AppTheme.backgroundColor,
-        appBar: AppBar(
-          backgroundColor: AppTheme.primaryColor,
-          title: const Text(
-            'Member Progress',
-            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-          ),
-        ),
         body: const Center(child: CircularProgressIndicator()),
       );
     }
 
-    return Scaffold(
-      backgroundColor: AppTheme.backgroundColor,
-      appBar: AppBar(
-        backgroundColor: AppTheme.primaryColor,
-        iconTheme: const IconThemeData(color: Colors.white),
-        title: Row(
+    return Builder(
+      builder: (context) {
+        final memberState = context.watch<MemberCubit>().state;
+        final coachState = context.watch<CoachCubit>().state;
+        final progressState = context.watch<ProgressCubit>().state;
+
+        final resolved = _resolveDomainIds(context, memberState: memberState, coachState: coachState);
+
+        return Scaffold(
+          backgroundColor: AppTheme.backgroundColor,
+          floatingActionButton: _canAdd()
+              ? FloatingActionButton(
+                  onPressed: resolved ? () => _showAddProgressDialog(context) : null,
+                  backgroundColor: AppTheme.primaryColor,
+                  child: const Icon(Icons.add, color: Colors.white),
+                )
+              : null,
+          body: BlocConsumer<ProgressCubit, ProgressState>(
+            listener: (context, state) {
+              if (state is ProgressOperationSuccess) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text(state.message), backgroundColor: Colors.green),
+                );
+              } else if (state is ProgressError) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('Error: ${state.message}'), backgroundColor: Colors.red),
+                );
+              }
+            },
+            builder: (context, state) {
+              if (state is ProgressInitial || state is ProgressLoading) {
+                return const Center(child: CircularProgressIndicator());
+              }
+
+              if (state is ProgressLoaded) {
+                final filteredItems = _filterProgressByRole(state.items);
+                filteredItems.sort((a, b) => b.date.compareTo(a.date)); // Newest first
+
+                return CustomScrollView(
+                  physics: const BouncingScrollPhysics(),
+                  slivers: [
+                    _buildSliverAppBar(),
+                    if (_isMember && filteredItems.isNotEmpty)
+                      SliverPadding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                        sliver: SliverToBoxAdapter(
+                          child: _buildProgressDashboard(filteredItems),
+                        ),
+                      ),
+                    if (filteredItems.isEmpty)
+                      SliverFillRemaining(
+                        hasScrollBody: false,
+                        child: _buildEmptyState(),
+                      )
+                    else
+                      SliverPadding(
+                        padding: const EdgeInsets.all(16),
+                        sliver: SliverList(
+                          delegate: SliverChildBuilderDelegate(
+                            (context, index) {
+                              final item = filteredItems[index];
+                              return Padding(
+                                padding: const EdgeInsets.only(bottom: 12),
+                                child: ProgressCard(
+                                  item: item,
+                                  onEdit: _canEdit() ? () => _showEditProgressDialog(context, item) : null,
+                                  onDelete: _canDelete() ? () => _showDeleteDialog(context, item.id) : null,
+                                  showChartToggle: _isAdmin || _isCoach,
+                                  allMemberProgress: state.items.where((i) => i.memberId == item.memberId).toList(),
+                                ),
+                              );
+                            },
+                            childCount: filteredItems.length,
+                          ),
+                        ),
+                      ),
+                  ],
+                );
+              }
+
+              return _buildErrorState(state);
+            },
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildSliverAppBar() {
+    return SliverAppBar(
+      expandedHeight: 120.0,
+      floating: false,
+      pinned: true,
+      stretch: true,
+      backgroundColor: AppTheme.primaryColor.withOpacity(0.8),
+      flexibleSpace: FlexibleSpaceBar(
+        centerTitle: false,
+        titlePadding: const EdgeInsets.only(left: 16, bottom: 16),
+        title: Text(
+          'Member Progress',
+          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18),
+        ),
+        background: Stack(
+          fit: StackFit.expand,
           children: [
-            const Text(
-              'Member Progress',
-              style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-            ),
-            const Spacer(),
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.2),
-                borderRadius: BorderRadius.circular(12),
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [AppTheme.primaryColor, AppTheme.primaryColor.withBlue(150)],
+                ),
               ),
-              child: Text(
-                _currentUserRole,
-                style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w500),
+            ),
+            ClipRRect(
+              child: BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 5.0, sigmaY: 5.0),
+                child: Container(color: Colors.transparent),
               ),
             ),
           ],
         ),
-        elevation: 0,
       ),
-      floatingActionButton: _canAdd()
-          ? FloatingActionButton(
-              onPressed: () => _showAddProgressDialog(context),
-              backgroundColor: AppTheme.primaryColor,
-              child: const Icon(Icons.add, color: Colors.white),
-            )
-          : null,
-      body: BlocConsumer<ProgressCubit, ProgressState>(
-        listener: (context, state) {
-          if (state is ProgressOperationSuccess) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(state.message),
-                backgroundColor: Colors.green,
-              ),
-            );
-          } else if (state is ProgressError) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text('Error: ${state.message}'),
-                backgroundColor: Colors.red,
-              ),
-            );
-          }
-        },
-        builder: (context, state) {
-          if (state is ProgressInitial || state is ProgressLoading) {
-            return const Center(child: CircularProgressIndicator());
-          }
+      actions: [
+        Padding(
+          padding: const EdgeInsets.only(right: 16, top: 8, bottom: 8),
+          child: Container(
+            alignment: Alignment.center,
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.2),
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Text(
+              _currentUserRole,
+              style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
 
-          if (state is ProgressLoaded) {
-            final filteredItems = _filterProgressByRole(state.items);
-            
-            if (filteredItems.isEmpty) {
-              return Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Icon(
-                      Icons.trending_up_outlined,
-                      size: 64,
-                      color: Colors.grey,
-                    ),
-                    const SizedBox(height: 16),
-                    Text(
-                      _isMember 
-                          ? 'No progress records found for you.'
-                          : 'No progress records found.',
-                      style: const TextStyle(fontSize: 18, color: Colors.grey),
-                    ),
-                  ],
-                ),
-              );
-            }
+  Widget _buildProgressDashboard(List<MemberProgressEntity> items) {
+    // If we are a member, the items are already filtered by _filterProgressByRole
+    // but just to be safe and ensure the graph is sorted correctly:
+    final List<MemberProgressEntity> myProgress = List.from(items);
+    myProgress.sort((a, b) => a.date.compareTo(b.date)); // Oldest to newest for graph
 
-            return RefreshIndicator(
-              onRefresh: () async {
-                context.read<ProgressCubit>().loadProgress();
-              },
-              child: ListView.builder(
-                padding: const EdgeInsets.all(16),
-                itemCount: filteredItems.length,
-                itemBuilder: (context, index) {
-                  final item = filteredItems[index];
-                  return ProgressCard(
-                    item: item,
-                    onEdit: _canEdit() ? () => _showEditProgressDialog(context, item) : null,
-                    onDelete: _canDelete() ? () => _showDeleteDialog(context, item.id) : null,
+    if (myProgress.isEmpty) return const SizedBox.shrink();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _buildStatsRow(myProgress),
+        const SizedBox(height: 16),
+        _buildChartCard(myProgress),
+      ],
+    );
+  }
+
+  Widget _buildStatsRow(List<MemberProgressEntity> items) {
+    if (items.isEmpty) return const SizedBox.shrink();
+    
+    final totalSets = items.fold(0, (sum, i) => sum + i.setsCompleted);
+    final avgSets = (totalSets / items.length).toStringAsFixed(1);
+    final lastPromotion = items.any((i) => i.promotionDate != null) 
+      ? items.lastWhere((i) => i.promotionDate != null).promotionDate!.toLocal().toString().split(' ')[0]
+      : 'None';
+
+    return Row(
+      children: [
+        Expanded(child: _buildStatMiniCard('Total Sets', totalSets.toString(), Icons.fitness_center, Colors.orange)),
+        const SizedBox(width: 8),
+        Expanded(child: _buildStatMiniCard('Avg Sets', avgSets, Icons.trending_up, Colors.blue)),
+        const SizedBox(width: 8),
+        Expanded(child: _buildStatMiniCard('Last Promo', lastPromotion, Icons.star, Colors.amber)),
+      ],
+    );
+  }
+
+  Widget _buildStatMiniCard(String label, String value, IconData icon, Color color) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10)],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, size: 16, color: color),
+          const SizedBox(height: 8),
+          Text(value, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+          Text(label, style: const TextStyle(color: Colors.grey, fontSize: 10)),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildChartCard(List<MemberProgressEntity> items) {
+    return Container(
+      height: 250,
+      padding: const EdgeInsets.fromLTRB(8, 24, 24, 8),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 15)],
+      ),
+      child: LineChart(
+        LineChartData(
+          lineTouchData: LineTouchData(
+            touchTooltipData: LineTouchTooltipData(
+              getTooltipColor: (spot) => AppTheme.primaryColor.withOpacity(0.8),
+              getTooltipItems: (touchedSpots) {
+                return touchedSpots.map((spot) {
+                  final date = items[spot.x.toInt()].date;
+                  return LineTooltipItem(
+                    '${date.day}/${date.month}\n',
+                    const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12),
+                    children: [
+                      TextSpan(
+                        text: '${spot.y.toInt()} Sets',
+                        style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w400, fontSize: 10),
+                      ),
+                    ],
                   );
+                }).toList();
+              },
+            ),
+            handleBuiltInTouches: true,
+          ),
+          gridData: FlGridData(
+            show: true,
+            drawVerticalLine: false,
+            getDrawingHorizontalLine: (value) => FlLine(color: Colors.grey.withOpacity(0.1), strokeWidth: 1),
+          ),
+          titlesData: FlTitlesData(
+            show: true,
+            rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+            topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+            bottomTitles: AxisTitles(
+              sideTitles: SideTitles(
+                showTitles: true,
+                reservedSize: 30,
+                interval: items.length > 5 ? (items.length / 5).ceil().toDouble() : 1,
+                getTitlesWidget: (value, meta) {
+                  final int index = value.toInt();
+                  if (index >= 0 && index < items.length) {
+                    final date = items[index].date;
+                    // Show only some labels if there are many items
+                    return SideTitleWidget(
+                      meta: meta,
+                      child: Text('${date.day}/${date.month}', style: const TextStyle(color: Colors.grey, fontSize: 10)),
+                    );
+                  }
+                  return const SizedBox.shrink();
                 },
               ),
-            );
-          }
+            ),
+            leftTitles: AxisTitles(
+              sideTitles: SideTitles(
+                showTitles: true,
+                interval: 5,
 
-          if (state is ProgressError) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(Icons.error_outline, size: 64, color: Colors.red),
-                  const SizedBox(height: 16),
-                  Text(
-                    'Failed to load progress.\nError: ${state.message}',
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(color: Colors.red),
-                  ),
-                  const SizedBox(height: 16),
-                  ElevatedButton(
-                    onPressed: () =>
-                        context.read<ProgressCubit>().loadProgress(),
-                    child: const Text('Retry'),
-                  ),
-                ],
+                getTitlesWidget: (value, meta) => SideTitleWidget(
+                  meta: meta,
+                  child: Text(value.toInt().toString(), style: const TextStyle(color: Colors.grey, fontSize: 10)),
+                ),
+                reservedSize: 28,
               ),
-            );
-          }
+            ),
+          ),
+          borderData: FlBorderData(show: false),
+          minX: 0,
+          maxX: items.length > 1 ? (items.length - 1).toDouble() : 0,
+          minY: 0,
+          maxY: items.isNotEmpty ? (items.map((e) => e.setsCompleted).reduce((a, b) => a > b ? a : b) + 5).toDouble() : 20,
+          lineBarsData: [
+            LineChartBarData(
+              spots: items.asMap().entries.map((e) => FlSpot(e.key.toDouble(), e.value.setsCompleted.toDouble())).toList(),
+              barWidth: 4,
+              isStrokeCapRound: true,
+              dotData: FlDotData(
+                show: true,
+                getDotPainter: (spot, percent, barData, index) => FlDotCirclePainter(
+                  radius: 4,
+                  color: Colors.white,
+                  strokeWidth: 2,
+                  strokeColor: AppTheme.primaryColor,
+                ),
+              ),
+              belowBarData: BarAreaData(
+                show: true,
+                gradient: LinearGradient(
+                  colors: [AppTheme.primaryColor.withOpacity(0.3), AppTheme.primaryColor.withOpacity(0.0)],
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 
-          return const Center(child: Text('Something went wrong.'));
-        },
+  Widget _buildEmptyState() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Icon(Icons.trending_up_outlined, size: 64, color: Colors.grey),
+          const SizedBox(height: 16),
+          Text(
+            _isMember ? 'No progress records found for you.' : 'No progress records found.',
+            style: const TextStyle(fontSize: 18, color: Colors.grey),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildErrorState(ProgressState state) {
+    String message = 'Something went wrong.';
+    if (state is ProgressError) message = state.message;
+    
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Icon(Icons.error_outline, size: 64, color: Colors.red),
+          const SizedBox(height: 16),
+          Text(
+            'Failed to load progress.\nError: $message',
+            textAlign: TextAlign.center,
+            style: const TextStyle(color: Colors.red),
+          ),
+          const SizedBox(height: 16),
+          ElevatedButton(
+            onPressed: () => context.read<ProgressCubit>().loadProgress(),
+            child: const Text('Retry'),
+          ),
+        ],
       ),
     );
   }
@@ -571,20 +816,32 @@ class _ProgressListPageState extends State<ProgressListPage> {
   }
 }
 
-class ProgressCard extends StatelessWidget {
+class ProgressCard extends StatefulWidget {
   final MemberProgressEntity item;
   final VoidCallback? onEdit;
   final VoidCallback? onDelete;
+  final bool showChartToggle;
+  final List<MemberProgressEntity>? allMemberProgress;
 
   const ProgressCard({
     super.key,
     required this.item,
     this.onEdit,
     this.onDelete,
+    this.showChartToggle = false,
+    this.allMemberProgress,
   });
 
   @override
+  State<ProgressCard> createState() => _ProgressCardState();
+}
+
+class _ProgressCardState extends State<ProgressCard> {
+  bool _isExpanded = false;
+
+  @override
   Widget build(BuildContext context) {
+    final item = widget.item;
     final date = item.date.toLocal().toString().split(' ')[0];
     final promotionDate = item.promotionDate != null
         ? item.promotionDate!.toLocal().toString().split(' ')[0]
@@ -596,108 +853,77 @@ class ProgressCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              GradientAvatar(
-                icon: isPromoted ? Icons.star : Icons.trending_up,
-                size: 56,
-              ),
-              const SizedBox(width: AppTheme.spacingMD),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      item.memberName,
-                      style: AppTheme.heading3.copyWith(fontSize: 18),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    const SizedBox(height: 4),
-                    Row(
-                      children: [
-                        Icon(
-                          Icons.calendar_today,
-                          size: 14,
-                          color: AppTheme.textLight,
-                        ),
-                        const SizedBox(width: 4),
-                        Text(
-                          date,
-                          style: AppTheme.bodyMedium.copyWith(fontSize: 13),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-              if (isPromoted)
-                StatusBadge(
-                  text: 'Promoted',
-                  color: AppTheme.successColor,
-                  icon: Icons.star,
-                )
-              else
-                StatusBadge(
-                  text: 'In Progress',
-                  color: AppTheme.warningColor,
-                  icon: Icons.trending_up,
-                ),
-            ],
-          ),
-          const SizedBox(height: AppTheme.spacingMD),
-          Container(
-            padding: const EdgeInsets.all(AppTheme.spacingMD),
-            decoration: BoxDecoration(
-              color: AppTheme.backgroundColor,
-              borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
-            ),
+          InkWell(
+            onTap: widget.showChartToggle ? () => setState(() => _isExpanded = !_isExpanded) : null,
             child: Row(
               children: [
+                GradientAvatar(
+                  icon: isPromoted ? Icons.star : Icons.trending_up,
+                  size: 50,
+                ),
+                const SizedBox(width: AppTheme.spacingMD),
                 Expanded(
-                  child: StatItem(
-                    icon: Icons.fitness_center,
-                    label: 'Sets Completed',
-                    value: '${item.setsCompleted}',
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        item.memberName,
+                        style: AppTheme.heading3.copyWith(fontSize: 16),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        date,
+                        style: AppTheme.bodyMedium.copyWith(fontSize: 12, color: Colors.grey),
+                      ),
+                    ],
                   ),
                 ),
-                if (isPromoted) ...[
-                  Container(
-                    width: 1,
-                    height: 40,
-                    color: AppTheme.textLight.withOpacity(0.2),
+                if (isPromoted)
+                  StatusBadge(
+                    text: 'Promoted',
+                    color: AppTheme.successColor,
+                    icon: Icons.star,
                   ),
-                  Expanded(
-                    child: StatItem(
-                      icon: Icons.star,
-                      label: 'Promoted On',
-                      value: promotionDate,
-                      iconColor: AppTheme.successColor,
-                    ),
+                if (widget.showChartToggle)
+                  Icon(
+                    _isExpanded ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
+                    color: Colors.grey,
                   ),
-                ],
               ],
             ),
           ),
-          if (onEdit != null || onDelete != null) ...[
-            const SizedBox(height: AppTheme.spacingMD),
+          if (_isExpanded && widget.allMemberProgress != null) ...[
+            const SizedBox(height: 16),
+            const Text('Member Progress History', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+            const SizedBox(height: 8),
+            SizedBox(
+              height: 150,
+              child: _buildMiniChart(widget.allMemberProgress!),
+            ),
+          ],
+          const SizedBox(height: 16),
+          _buildDetailRow(item, isPromoted, promotionDate),
+          if (widget.onEdit != null || widget.onDelete != null) ...[
+            const SizedBox(height: 12),
             Row(
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
-                if (onEdit != null)
+                if (widget.onEdit != null)
                   ActionButton(
                     icon: Icons.edit_rounded,
                     color: AppTheme.infoColor,
-                    onPressed: onEdit!,
+                    onPressed: widget.onEdit!,
                     tooltip: 'Edit',
                   ),
-                if (onEdit != null && onDelete != null)
-                  const SizedBox(width: AppTheme.spacingSM),
-                if (onDelete != null)
+                if (widget.onEdit != null && widget.onDelete != null)
+                  const SizedBox(width: 8),
+                if (widget.onDelete != null)
                   ActionButton(
                     icon: Icons.delete_rounded,
                     color: AppTheme.errorColor,
-                    onPressed: onDelete!,
+                    onPressed: widget.onDelete!,
                     tooltip: 'Delete',
                   ),
               ],
@@ -705,6 +931,83 @@ class ProgressCard extends StatelessWidget {
           ],
         ],
       ),
+    );
+  }
+
+  Widget _buildMiniChart(List<MemberProgressEntity> items) {
+    items.sort((a, b) => a.date.compareTo(b.date));
+    return LineChart(
+      LineChartData(
+        gridData: const FlGridData(show: false),
+        titlesData: const FlTitlesData(show: false),
+        borderData: FlBorderData(show: false),
+        lineBarsData: [
+          LineChartBarData(
+            spots: items.asMap().entries.map((e) => FlSpot(e.key.toDouble(), e.value.setsCompleted.toDouble())).toList(),
+            isCurved: true,
+            gradient: LinearGradient(colors: [AppTheme.primaryColor, AppTheme.primaryColor.withOpacity(0.5)]),
+            barWidth: 3,
+            dotData: const FlDotData(show: false),
+            belowBarData: BarAreaData(show: true, gradient: LinearGradient(colors: [AppTheme.primaryColor.withOpacity(0.1), Colors.transparent], begin: Alignment.topCenter, end: Alignment.bottomCenter)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDetailRow(MemberProgressEntity item, bool isPromoted, String promotionDate) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: AppTheme.backgroundColor,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: _StatValue(
+              icon: Icons.fitness_center,
+              label: 'Sets',
+              value: '${item.setsCompleted}',
+            ),
+          ),
+          if (isPromoted) ...[
+            Container(width: 1, height: 24, color: Colors.grey.withOpacity(0.2)),
+            Expanded(
+              child: _StatValue(
+                icon: Icons.star_border,
+                label: 'Promo',
+                value: promotionDate,
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _StatValue extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final String value;
+
+  const _StatValue({required this.icon, required this.label, required this.value});
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Icon(icon, size: 16, color: Colors.grey),
+        const SizedBox(width: 8),
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(value, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+            Text(label, style: const TextStyle(color: Colors.grey, fontSize: 10)),
+          ],
+        ),
+      ],
     );
   }
 }

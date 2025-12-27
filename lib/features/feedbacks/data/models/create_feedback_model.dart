@@ -5,6 +5,7 @@ class CreateFeedbackModel {
   final double rating;
   final String? comments;
   final DateTime timestamp;
+  final String senderType; // 'Member' or 'Coach'
 
   CreateFeedbackModel({
     required this.memberId,
@@ -13,6 +14,7 @@ class CreateFeedbackModel {
     required this.rating,
     this.comments,
     required this.timestamp,
+    required this.senderType,
   });
 
   Map<String, dynamic> toJson() {
@@ -23,6 +25,7 @@ class CreateFeedbackModel {
       'rating': rating,
       'comments': comments,
       'timestamp': timestamp.toIso8601String(),
+      'senderType': senderType,
     };
   }
 }
