@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:maa3/core/app_theme.dart';
-import 'package:maa3/features/auth1/presentation/pages/login_screen.dart';
+import 'package:thesavage/core/app_theme.dart';
+import 'package:thesavage/features/auth1/presentation/pages/login_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../widgets/AnimatedNavExample.dart';
+import 'package:thesavage/features/auth1/presentation/pages/onboarding_page.dart'; // Import Onboarding
+import 'package:thesavage/screen/person.dart';
+
+import '../widgets/AnimatedNavExample.dart'; // Import Home/Person
 
 class Sp extends StatefulWidget {
   const Sp({super.key});
@@ -21,7 +24,7 @@ class _SpState extends State<Sp> with SingleTickerProviderStateMixin {
     super.initState();
 
     _controller = AnimationController(
-      duration: const Duration(milliseconds: 1200), // تقليل وقت الأنيميشن قليلاً لسرعة الاستجابة
+      duration: const Duration(milliseconds: 1200),
       vsync: this,
     );
 
@@ -34,9 +37,9 @@ class _SpState extends State<Sp> with SingleTickerProviderStateMixin {
     );
 
     _controller.forward();
-
-    // ⚡ البدء بفحص التوكن فوراً دون انتظار 3 ثوانٍ
-    checkToken();
+    
+    // Start navigation check
+    _checkNavigation();
   }
 
   @override
@@ -45,51 +48,65 @@ class _SpState extends State<Sp> with SingleTickerProviderStateMixin {
     super.dispose();
   }
 
-  Future<void> checkToken() async {
+  Future<void> _checkNavigation() async {
     try {
-      // 1. نبدأ بجلب البيانات من الذاكرة بالتوازي مع الأنيميشن
-      // final prefs = await SharedPreferences.getInstance();
-      // final String token = prefs.getString("token") ?? "";
-
-      // حذف التوكن عند بدء التطبيق لضمان عدم الحفظ (بناءً على طلب المستخدم)
-      // await prefs.remove('token'); 
-
-      // 2. ننتظر فقط الحد الأدنى المطلوب للأنيميشن
-      await Future.delayed(const Duration(milliseconds: 1500));
-
+      // 1. Minimum Splash Duration
+      await Future.delayed(const Duration(milliseconds: 2000));
+      
       if (!mounted) return;
 
-      // 3. الانتقال دائماً لشاشة تسجيل الدخول
-      Navigator.pushReplacement(
-        context,
-        PageRouteBuilder(
-          pageBuilder: (context, animation, secondaryAnimation) => const LoginScreen(),
-          transitionsBuilder: (context, animation, secondaryAnimation, child) {
-            return FadeTransition(opacity: animation, child: child);
-          },
-          transitionDuration: const Duration(milliseconds: 500),
-        ),
-      );
-    } catch (e, stack) {
-      debugPrint('Error in checkToken: $e\n$stack');
-      // In case of error, still try to go to login screen after a delay
+      final prefs = await SharedPreferences.getInstance();
+      
+      // 2. Check Valid Token
+      final String? token = prefs.getString("token");
+      final bool hasToken = token != null && token.isNotEmpty;
+      
+      // 3. Check Onboarding
+      final bool seenOnboarding = prefs.getBool('onboarding_seen') ?? false;
+
+      // 4. Navigate based on state
+      if (!seenOnboarding) {
+        // First time user -> Onboarding
+        Navigator.pushReplacement(
+            context, _createRoute(const OnboardingPage()));
+      } else if (hasToken) {
+        // Logged in user -> Home
+        Navigator.pushReplacement(
+
+            context, _createRoute(const AnimatedNavExample()));
+      } else {
+        // Returning user, no session -> Login
+        Navigator.pushReplacement(
+            context, _createRoute(const LoginScreen()));
+      }
+    } catch (e) {
+      debugPrint('Error in splash navigation: $e');
+      // Fallback
       if (mounted) {
          Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => const LoginScreen()),
-        );
+            context, _createRoute(const LoginScreen()));
       }
     }
+  }
+
+  Route _createRoute(Widget page) {
+    return PageRouteBuilder(
+      pageBuilder: (context, animation, secondaryAnimation) => page,
+      transitionsBuilder: (context, animation, secondaryAnimation, child) {
+        return FadeTransition(opacity: animation, child: child);
+      },
+      transitionDuration: const Duration(milliseconds: 800),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.black, // خلفية ثابتة لمنع "الومضات"
+      backgroundColor: Colors.black,
       body: Container(
         width: double.infinity,
         height: double.infinity,
-        decoration: BoxDecoration(gradient: AppTheme.primaryGradient),
+        decoration: BoxDecoration(gradient: AppTheme.primaryGradiente),
         child: Stack(
           children: [
             Center(
@@ -116,7 +133,6 @@ class _SpState extends State<Sp> with SingleTickerProviderStateMixin {
                       style: TextStyle(color: Colors.white, fontSize: 32, fontWeight: FontWeight.w900, letterSpacing: 8),
                     ),
                     const SizedBox(height: 50),
-                    // مؤشر تحميل صغير جداً لا يشتت الانتباه
                     const SizedBox(
                       width: 20, height: 20,
                       child: CircularProgressIndicator(strokeWidth: 2, valueColor: AlwaysStoppedAnimation<Color>(Colors.white24)),

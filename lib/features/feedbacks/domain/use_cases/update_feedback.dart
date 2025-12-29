@@ -1,5 +1,5 @@
-import 'package:maa3/features/feedbacks/data/models/update_feedback_model.dart';
-import 'package:maa3/features/feedbacks/domain/repositories/feedback_repository.dart';
+import 'package:thesavage/features/feedbacks/data/models/update_feedback_model.dart';
+import 'package:thesavage/features/feedbacks/domain/repositories/feedback_repository.dart';
 
 class UpdateFeedback {
   final FeedbackRepository repository;

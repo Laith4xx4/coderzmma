@@ -1,11 +1,11 @@
 import 'package:bloc/bloc.dart';
-import 'package:maa3/features/bookings/data/models/create_booking_model.dart';
-import 'package:maa3/features/bookings/data/models/update_booking_model.dart';
-import 'package:maa3/features/bookings/domain/use_cases/create_booking.dart';
-import 'package:maa3/features/bookings/domain/use_cases/delete_booking.dart';
-import 'package:maa3/features/bookings/domain/use_cases/get_all_bookings.dart';
-import 'package:maa3/features/bookings/domain/use_cases/update_booking.dart';
-import 'package:maa3/features/bookings/presentation/bloc/booking_state.dart';
+import 'package:thesavage/features/bookings/data/models/create_booking_model.dart';
+import 'package:thesavage/features/bookings/data/models/update_booking_model.dart';
+import 'package:thesavage/features/bookings/domain/use_cases/create_booking.dart';
+import 'package:thesavage/features/bookings/domain/use_cases/delete_booking.dart';
+import 'package:thesavage/features/bookings/domain/use_cases/get_all_bookings.dart';
+import 'package:thesavage/features/bookings/domain/use_cases/update_booking.dart';
+import 'package:thesavage/features/bookings/presentation/bloc/booking_state.dart';
 
 class BookingCubit extends Cubit<BookingState> {
   final GetAllBookings getAllBookings;

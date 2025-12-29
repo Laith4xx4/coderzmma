@@ -1,5 +1,5 @@
-import 'package:maa3/features/classtypes/domain/entities/class_type_entity.dart';
-import 'package:maa3/features/classtypes/domain/repositories/class_type_repository.dart';
+import 'package:thesavage/features/classtypes/domain/entities/class_type_entity.dart';
+import 'package:thesavage/features/classtypes/domain/repositories/class_type_repository.dart';
 
 class GetAllClassTypes {
   final ClassTypeRepository repository;

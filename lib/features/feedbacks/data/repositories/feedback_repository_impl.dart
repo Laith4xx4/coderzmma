@@ -1,9 +1,9 @@
-import 'package:maa3/features/feedbacks/data/datasource/feedback_api_service.dart';
-import 'package:maa3/features/feedbacks/data/models/create_feedback_model.dart';
-import 'package:maa3/features/feedbacks/data/models/feedback_model.dart';
-import 'package:maa3/features/feedbacks/data/models/update_feedback_model.dart';
-import 'package:maa3/features/feedbacks/domain/entities/feedback_entity.dart';
-import 'package:maa3/features/feedbacks/domain/repositories/feedback_repository.dart';
+import 'package:thesavage/features/feedbacks/data/datasource/feedback_api_service.dart';
+import 'package:thesavage/features/feedbacks/data/models/create_feedback_model.dart';
+import 'package:thesavage/features/feedbacks/data/models/feedback_model.dart';
+import 'package:thesavage/features/feedbacks/data/models/update_feedback_model.dart';
+import 'package:thesavage/features/feedbacks/domain/entities/feedback_entity.dart';
+import 'package:thesavage/features/feedbacks/domain/repositories/feedback_repository.dart';
 
 class FeedbackRepositoryImpl implements FeedbackRepository {
   final FeedbackApiService apiService;

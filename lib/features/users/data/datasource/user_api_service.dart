@@ -1,8 +1,8 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import 'package:maa3/features/users/domain/entities/user_entity.dart';
+import 'package:thesavage/features/users/domain/entities/user_entity.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:maa3/core/api_strings.dart';
+import 'package:thesavage/core/api_strings.dart';
 
 
 class UserApiService {

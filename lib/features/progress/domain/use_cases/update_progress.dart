@@ -1,5 +1,5 @@
-import 'package:maa3/features/progress/data/models/update_member_progress_model.dart';
-import 'package:maa3/features/progress/domain/repositories/member_progress_repository.dart';
+import 'package:thesavage/features/progress/data/models/update_member_progress_model.dart';
+import 'package:thesavage/features/progress/domain/repositories/member_progress_repository.dart';
 
 class UpdateProgress {
   final MemberProgressRepository repository;

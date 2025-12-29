@@ -1,5 +1,5 @@
 import 'package:equatable/equatable.dart';
-import 'package:maa3/features/attendance/domain/entities/attendance_entity.dart';
+import 'package:thesavage/features/attendance/domain/entities/attendance_entity.dart';
 
 abstract class AttendanceState extends Equatable {
   @override

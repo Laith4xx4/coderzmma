@@ -1,5 +1,5 @@
 import 'package:equatable/equatable.dart';
-import 'package:maa3/features/bookings/domain/entities/booking_entity.dart';
+import 'package:thesavage/features/bookings/domain/entities/booking_entity.dart';
 
 abstract class BookingState extends Equatable {
   @override

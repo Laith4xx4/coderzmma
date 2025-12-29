@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:maa3/core/app_theme.dart';
+import 'package:thesavage/core/app_theme.dart';
 
 class AboutPage extends StatelessWidget {
   const AboutPage({super.key});
@@ -14,7 +14,7 @@ class AboutPage extends StatelessWidget {
           SliverAppBar(
             expandedHeight: 220,
             pinned: true,
-            backgroundColor: AppTheme.primaryColor,
+            backgroundColor: AppTheme.primaryDark,
             flexibleSpace: FlexibleSpaceBar(
               centerTitle: true,
               title: const Text('MAA MANAGEMENT',
@@ -51,7 +51,7 @@ class AboutPage extends StatelessWidget {
                     ),
                   ),
 
-                  const SizedBox(height: AppTheme.spacingMD),
+                  const SizedBox(height: AppTheme.borderRadiusMedium),
 
                   _animateIn(
                     delay: 500,
@@ -76,7 +76,7 @@ class AboutPage extends StatelessWidget {
         const Text('PREMIUM SYSTEM',
             style: TextStyle(color: AppTheme.textLight, letterSpacing: 4, fontSize: 12, fontWeight: FontWeight.bold)),
         const SizedBox(height: 8),
-        const Text('Elevating The Game', style: AppTheme.heading2),
+        Text('Elevating The Game', style: AppTheme.heading2),
         const SizedBox(height: 16),
         Container(height: 2, width: 40, color: AppTheme.primaryColor),
       ],
@@ -115,8 +115,8 @@ class AboutPage extends StatelessWidget {
       decoration: AppTheme.cardDecoration(color: AppTheme.primaryColor),
       child: Column(
         children: [
-          Text(val, style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)),
-          Text(label, style: const TextStyle(color: Colors.white70, fontSize: 12)),
+          Text(val, style: const TextStyle(color: Colors.black, fontSize: 24, fontWeight: FontWeight.bold)),
+          Text(label, style: const TextStyle(color: Colors.black, fontSize: 12)),
         ],
       ),
     );

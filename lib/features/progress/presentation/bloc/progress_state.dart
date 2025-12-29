@@ -1,5 +1,5 @@
 import 'package:equatable/equatable.dart';
-import 'package:maa3/features/progress/domain/entities/member_progress_entity.dart';
+import 'package:thesavage/features/progress/domain/entities/member_progress_entity.dart';
 
 abstract class ProgressState extends Equatable {
   @override

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:maa3/core/app_theme.dart';
+import 'package:thesavage/core/app_theme.dart';
 
 class ModernCard extends StatelessWidget {
   final Widget child;

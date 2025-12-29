@@ -1,4 +1,4 @@
-import 'package:maa3/features/auth1/domain/entities/user.dart';
+import 'package:thesavage/features/auth1/domain/entities/user.dart';
 
 class UserModel extends User {
   // إزالة const

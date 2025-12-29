@@ -1,5 +1,5 @@
 import 'package:equatable/equatable.dart';
-import 'package:maa3/features/sessions/domain/entities/session_entity.dart';
+import 'package:thesavage/features/sessions/domain/entities/session_entity.dart';
 
 abstract class SessionState extends Equatable {
   @override

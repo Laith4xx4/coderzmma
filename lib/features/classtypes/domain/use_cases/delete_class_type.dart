@@ -1,4 +1,4 @@
-import 'package:maa3/features/classtypes/domain/repositories/class_type_repository.dart';
+import 'package:thesavage/features/classtypes/domain/repositories/class_type_repository.dart';
 
 class DeleteClassType {
   final ClassTypeRepository repository;

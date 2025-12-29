@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:maa3/core/app_theme.dart';
-import 'package:maa3/screen/SP.dart'; // الانتقال إلى شاشة فحص التوكن
+import 'package:thesavage/core/app_theme.dart';
+import 'package:thesavage/screen/SP.dart'; // الانتقال إلى شاشة فحص التوكن
 import 'package:shared_preferences/shared_preferences.dart';
 
 class Splash extends StatefulWidget {

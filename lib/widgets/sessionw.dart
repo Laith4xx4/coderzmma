@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:maa3/core/app_theme.dart';
-import 'package:maa3/widgets/modern_card.dart';
-import 'package:maa3/features/sessions/domain/entities/session_entity.dart';
-import 'package:maa3/features/sessions/presentation/bloc/session_cubit.dart';
-import 'package:maa3/features/sessions/presentation/bloc/session_state.dart';
+import 'package:thesavage/core/app_theme.dart';
+import 'package:thesavage/widgets/modern_card.dart';
+import 'package:thesavage/features/sessions/domain/entities/session_entity.dart';
+import 'package:thesavage/features/sessions/presentation/bloc/session_cubit.dart';
+import 'package:thesavage/features/sessions/presentation/bloc/session_state.dart';
 
 class Sessionw extends StatefulWidget {
   const Sessionw({super.key});

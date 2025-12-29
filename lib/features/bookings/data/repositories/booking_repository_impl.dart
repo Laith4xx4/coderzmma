@@ -1,9 +1,9 @@
-import 'package:maa3/features/bookings/data/datasource/booking_api_service.dart';
-import 'package:maa3/features/bookings/data/models/booking_model.dart';
-import 'package:maa3/features/bookings/data/models/create_booking_model.dart';
-import 'package:maa3/features/bookings/data/models/update_booking_model.dart';
-import 'package:maa3/features/bookings/domain/entities/booking_entity.dart';
-import 'package:maa3/features/bookings/domain/repositories/booking_repository.dart';
+import 'package:thesavage/features/bookings/data/datasource/booking_api_service.dart';
+import 'package:thesavage/features/bookings/data/models/booking_model.dart';
+import 'package:thesavage/features/bookings/data/models/create_booking_model.dart';
+import 'package:thesavage/features/bookings/data/models/update_booking_model.dart';
+import 'package:thesavage/features/bookings/domain/entities/booking_entity.dart';
+import 'package:thesavage/features/bookings/domain/repositories/booking_repository.dart';
 
 class BookingRepositoryImpl implements BookingRepository {
   final BookingApiService apiService;

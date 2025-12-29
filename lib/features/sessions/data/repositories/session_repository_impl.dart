@@ -1,9 +1,9 @@
-import 'package:maa3/features/sessions/data/datasource/session_api_service.dart';
-import 'package:maa3/features/sessions/data/models/session_model.dart';
-import 'package:maa3/features/sessions/data/models/create_session_model.dart';
-import 'package:maa3/features/sessions/data/models/update_session_model.dart';
-import 'package:maa3/features/sessions/domain/entities/session_entity.dart';
-import 'package:maa3/features/sessions/domain/repositories/session_repository.dart';
+import 'package:thesavage/features/sessions/data/datasource/session_api_service.dart';
+import 'package:thesavage/features/sessions/data/models/session_model.dart';
+import 'package:thesavage/features/sessions/data/models/create_session_model.dart';
+import 'package:thesavage/features/sessions/data/models/update_session_model.dart';
+import 'package:thesavage/features/sessions/domain/entities/session_entity.dart';
+import 'package:thesavage/features/sessions/domain/repositories/session_repository.dart';
 
 class SessionRepositoryImpl implements SessionRepository {
   final SessionApiService apiService;

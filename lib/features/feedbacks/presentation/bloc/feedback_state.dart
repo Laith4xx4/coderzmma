@@ -1,5 +1,5 @@
 import 'package:equatable/equatable.dart';
-import 'package:maa3/features/feedbacks/domain/entities/feedback_entity.dart';
+import 'package:thesavage/features/feedbacks/domain/entities/feedback_entity.dart';
 
 abstract class FeedbackState extends Equatable {
   @override

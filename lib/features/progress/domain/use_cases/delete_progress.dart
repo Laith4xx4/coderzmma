@@ -1,4 +1,4 @@
-import 'package:maa3/features/progress/domain/repositories/member_progress_repository.dart';
+import 'package:thesavage/features/progress/domain/repositories/member_progress_repository.dart';
 
 class DeleteProgress {
   final MemberProgressRepository repository;

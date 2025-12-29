@@ -1,5 +1,5 @@
 import 'package:equatable/equatable.dart';
-import 'package:maa3/features/classtypes/domain/entities/class_type_entity.dart';
+import 'package:thesavage/features/classtypes/domain/entities/class_type_entity.dart';
 
 abstract class ClassTypeState extends Equatable {
   @override

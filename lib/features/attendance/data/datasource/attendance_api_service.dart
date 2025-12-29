@@ -2,7 +2,7 @@ import 'dart:convert';
 
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:maa3/core/api_strings.dart';
+import 'package:thesavage/core/api_strings.dart';
 
 import '../models/attendance_model.dart';
 import '../models/create_attendance_model.dart';

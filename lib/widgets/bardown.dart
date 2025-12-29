@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:google_nav_bar/google_nav_bar.dart';
-import 'package:maa3/core/app_theme.dart';
-import 'package:maa3/features/classtypes/presentation/pages/class_type_list_page.dart';
-import 'package:maa3/screen/AboutPage.dart';
-import 'package:maa3/screen/home.dart';
-import 'package:maa3/screen/person.dart';
-import 'package:maa3/widgets/sessionw.dart';
+import 'package:thesavage/core/app_theme.dart';
+import 'package:thesavage/features/classtypes/presentation/pages/class_type_list_page.dart';
+import 'package:thesavage/screen/AboutPage.dart';
+import 'package:thesavage/screen/home.dart';
+import 'package:thesavage/screen/person.dart';
+import 'package:thesavage/widgets/sessionw.dart';
 
 class AnimatedNavExample extends StatefulWidget {
   const AnimatedNavExample({super.key});

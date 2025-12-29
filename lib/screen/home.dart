@@ -1,31 +1,32 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
-import 'package:maa3/core/app_theme.dart';
-import 'package:maa3/core/role_helper.dart';
-import 'package:maa3/widgets/carousl.dart';
+import 'package:thesavage/core/app_theme.dart';
+import 'package:thesavage/core/role_helper.dart';
+import 'package:thesavage/widgets/carousl.dart';
 import '../widgets/ShimmerEffect.dart';
 
-// Cubits & Pages Imports (بقيت كما هي)
-import 'package:maa3/features/attendance/presentation/bloc/attendance_cubit.dart';
-import 'package:maa3/features/bookings/presentation/bloc/booking_cubit.dart';
-import 'package:maa3/features/classtypes/presentation/bloc/class_type_cubit.dart';
-import 'package:maa3/features/classtypes/presentation/bloc/class_type_state.dart';
-import 'package:maa3/features/coaches/presentation/bloc/coach_cubit.dart';
-import 'package:maa3/features/feedbacks/presentation/bloc/feedback_cubit.dart';
-import 'package:maa3/features/memberpro/presentation/bloc/member_cubit.dart';
-import 'package:maa3/features/progress/presentation/bloc/progress_cubit.dart';
-import 'package:maa3/features/sessions/presentation/bloc/session_cubit.dart';
+// Cubits & Pages Imports
+import 'package:thesavage/features/attendance/presentation/bloc/attendance_cubit.dart';
+import 'package:thesavage/features/bookings/presentation/bloc/booking_cubit.dart';
+import 'package:thesavage/features/classtypes/presentation/bloc/class_type_cubit.dart';
+import 'package:thesavage/features/classtypes/presentation/bloc/class_type_state.dart';
+import 'package:thesavage/features/coaches/presentation/bloc/coach_cubit.dart';
+import 'package:thesavage/features/feedbacks/presentation/bloc/feedback_cubit.dart';
+import 'package:thesavage/features/memberpro/presentation/bloc/member_cubit.dart';
+import 'package:thesavage/features/progress/presentation/bloc/progress_cubit.dart';
+import 'package:thesavage/features/sessions/presentation/bloc/session_cubit.dart';
+import 'package:thesavage/features/sessions/presentation/pages/session_list_page.dart';
 
-import 'package:maa3/features/attendance/presentation/pages/attendance_list_page.dart';
-import 'package:maa3/features/bookings/presentation/pages/booking_list_page.dart';
-import 'package:maa3/features/classtypes/presentation/pages/class_type_list_page.dart';
-import 'package:maa3/features/coaches/presentation/pages/coach_list_page.dart';
-import 'package:maa3/features/feedbacks/presentation/pages/feedback_list_page.dart';
-import 'package:maa3/features/memberpro/presentation/pages/member_list_page.dart';
-import 'package:maa3/features/progress/presentation/pages/progress_list_page.dart';
-import 'package:maa3/features/sessions/presentation/pages/session_list_page.dart';
-import 'package:maa3/features/users/presentation/pages/user_management_page.dart';
+import 'package:thesavage/features/attendance/presentation/pages/attendance_list_page.dart';
+import 'package:thesavage/features/bookings/presentation/pages/booking_list_page.dart';
+import 'package:thesavage/features/classtypes/presentation/pages/class_type_list_page.dart';
+import 'package:thesavage/features/coaches/presentation/pages/coach_list_page.dart';
+import 'package:thesavage/features/feedbacks/presentation/pages/feedback_list_page.dart';
+import 'package:thesavage/features/memberpro/presentation/pages/member_list_page.dart';
+import 'package:thesavage/features/progress/presentation/pages/progress_list_page.dart';
+import 'package:thesavage/features/users/presentation/pages/user_management_page.dart';
 
 class Home extends StatefulWidget {
   const Home({super.key});
@@ -59,7 +60,6 @@ class _HomeState extends State<Home> with AutomaticKeepAliveClientMixin {
   }
 
   Future<void> _loadUserRole() async {
-
     final role = await RoleHelper.getCurrentUserRole();
     if (mounted) {
       _isAdmin = role?.toLowerCase() == 'admin';
@@ -93,168 +93,198 @@ class _HomeState extends State<Home> with AutomaticKeepAliveClientMixin {
 
     return Scaffold(
       backgroundColor: AppTheme.backgroundColor,
-      body: RefreshIndicator(
-        color: AppTheme.primaryColor,
-        backgroundColor: AppTheme.surfaceColor,
-        onRefresh: () async => _loadInitialData(),
-        child: CustomScrollView(
-          physics: const BouncingScrollPhysics(),
-          slivers: [
-            _buildModernHeader(),
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: AppTheme.spacingMD),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const SizedBox(height: AppTheme.spacingLG),
-
-                    // Carousel بتصميم متوافق مع الثيم
-                    Container(
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(AppTheme.borderRadiusLarge),
-                        boxShadow: AppTheme.cardShadow,
-                      ),
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(AppTheme.borderRadiusLarge),
-                        child: const RepaintBoundary(child: Carousl()),
-                      ),
+      body: SafeArea(
+        child: RefreshIndicator(
+          color: AppTheme.primaryColor,
+          backgroundColor: AppTheme.surfaceColor,
+          onRefresh: () async => _loadInitialData(),
+          child: SingleChildScrollView(
+            physics: const BouncingScrollPhysics(),
+            padding: const EdgeInsets.only(bottom: 100),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildStitchHeader(),
+                
+                // Weekly Goal / Stats Card
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 24),
+                  child: Container(
+                    padding: const EdgeInsets.all(24),
+                    decoration: BoxDecoration(
+                      color: const Color(0xD20C0C0C), // Dark Green Card
+                      borderRadius: BorderRadius.circular(30),
+                      boxShadow: AppTheme.cardShadow,
                     ),
-
-                    const SizedBox(height: AppTheme.spacingXL),
-                    const _SectionHeader(title: 'Dashboard Overview'),
-                    const SizedBox(height: AppTheme.spacingMD),
-
-                    _StatisticsGrid(
-                      isAdmin: _isAdmin,
-                      isCoach: _isCoach,
-                      isMember: _isMember,
-                      isClient: _isClient,
-                    ),
-
-                    const SizedBox(height: AppTheme.spacingXL),
-                    const _SectionHeader(title: 'Quick Management'),
-                    const SizedBox(height: AppTheme.spacingMD),
-
-                    _QuickAccessList(isAdmin: _isAdmin, isCoach: _isCoach, isClient: _isClient),
-
-                    const SizedBox(height: AppTheme.spacingXL),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const _SectionHeader(title: 'Latest Classes', padding: EdgeInsets.zero),
-                        TextButton(
-                            onPressed: (){},
-                            child: Text("Explore All", style: AppTheme.bodySmall.copyWith(color: AppTheme.infoColor, fontWeight: FontWeight.bold))
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text("Weekly Goal", style: AppTheme.heading3),
+                                Text("Keep your streak alive!", style: AppTheme.bodySmall),
+                              ],
+                            ),
+                            Container(
+                              width: 50, height: 50,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                border: Border.all(color: AppTheme.primaryColor, width: 3),
+                                color: AppTheme.primaryColor.withOpacity(0.1),
+                              ),
+                              child: Center(
+                                child: Text("3/5", style: TextStyle(color: AppTheme.primaryColor, fontWeight: FontWeight.bold)),
+                              ),
+                            )
+                          ],
+                        ),
+                        const SizedBox(height: 20),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text("Attendance", style: TextStyle(color: AppTheme.textSecondary, fontSize: 13)),
+                            Text("60%", style: TextStyle(color: AppTheme.primaryColor, fontWeight: FontWeight.bold)),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(10),
+                          child: LinearProgressIndicator(
+                            value: 0.6,
+                            backgroundColor: Colors.white.withOpacity(0.1),
+                            valueColor: const AlwaysStoppedAnimation(AppTheme.primaryColor),
+                            minHeight: 10,
+                          ),
+                        ),
+                        const SizedBox(height: 24),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                             _buildMiniStat("Calories", "1,240"),
+                             _buildMiniStat("Hours", "4.5h"),
+                             _buildMiniStat("Points", "850", isColor: true),
+                          ],
                         )
                       ],
                     ),
-                    const SizedBox(height: AppTheme.spacingMD),
-
-                    const _RecentClasses(),
-                    const SizedBox(height: 100),
-                  ],
+                  ),
                 ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
 
-  Widget _buildModernHeader() {
-    final now = DateTime.now();
-    final greeting = now.hour < 12 ? 'Good Morning' : now.hour < 17 ? 'Good Afternoon' : 'Good Evening';
-    final formattedDate = DateFormat('EEEE, d MMMM').format(now);
+                const SizedBox(height: 30),
 
-    return SliverAppBar(
-      expandedHeight: 150,
-      floating: false,
-      pinned: true,
-      elevation: 0,
-      backgroundColor: AppTheme.primaryColor,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(bottom: Radius.circular(AppTheme.borderRadiusXLarge)),
-      ),
-      flexibleSpace: FlexibleSpaceBar(
-        titlePadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-        centerTitle: false,
-        title: Column(
-          mainAxisAlignment: MainAxisAlignment.end,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              userRole?.toUpperCase() ?? 'USER',
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 16, // Reduced font size to prevent overflow
-                fontWeight: FontWeight.w800,
-                letterSpacing: 1.0,
-              ),
-            ),
-            // Replaced sized box with smaller one
-            Text(
-              formattedDate,
-              style: TextStyle(
-                color: Colors.white.withOpacity(0.6),
-                fontSize: 9,
-                fontWeight: FontWeight.w400,
-              ),
-            ),
-          ],
-        ),
-        background: Stack(
-          fit: StackFit.expand,
-          children: [
-            Container(
-              decoration: BoxDecoration(
-                gradient: AppTheme.primaryGradient,
-              ),
-            ),
-            // أيقونة خلفية خفيفة جداً
-            Positioned(
-              right: -20,
-              bottom: -20,
-              child: Icon(
-                Icons.fitness_center,
-                size: 150,
-                color: Colors.white.withOpacity(0.03),
-              ),
-            ),
-          ],
-        ),
-      ),
-      actions: [
-        Padding(
-          padding: const EdgeInsets.only(right: 16, top: 8),
-          child: CircleAvatar(
-            backgroundColor: Colors.white.withOpacity(0.1),
-            child: IconButton(
-              icon: const Icon(Icons.notifications_none_rounded, color: Colors.white, size: 20),
-              onPressed: () {},
+                // Carousel
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 24),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(20),
+                    child: const Carousl(),
+                  ),
+                ),
+
+                const SizedBox(height: 30),
+
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 24),
+                  child: Text("Quick Actions", style: AppTheme.heading3),
+                ),
+                
+                const SizedBox(height: 16),
+
+                // Grid
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 24),
+                  child: _StatisticsGrid(
+                    isAdmin: _isAdmin,
+                    isCoach: _isCoach,
+                    isMember: _isMember,
+                    isClient: _isClient,
+                  ),
+                ),
+
+                const SizedBox(height: 30),
+
+                // Recent Classes
+                 Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 24),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text("Latest Classes", style: AppTheme.heading3),
+                      TextButton(
+                        onPressed: () => Navigator.push(context, _createRoute(const ClassTypeListPage())),
+                        child: Text("See all", style: TextStyle(color: AppTheme.primaryColor)),
+                      )
+                    ],
+                  ),
+                ),
+                const Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 24),
+                  child: _RecentClasses(),
+                ),
+              ],
             ),
           ),
-        )
-      ],
+        ),
+      ),
     );
   }
-}
 
-class _SectionHeader extends StatelessWidget {
-  final String title;
-  final EdgeInsetsGeometry padding;
-  const _SectionHeader({required this.title, this.padding = const EdgeInsets.only(left: 4)});
-
-  @override
-  Widget build(BuildContext context) {
+  Widget _buildStitchHeader() {
     return Padding(
-      padding: padding,
-      child: Text(
-        title,
-        style: AppTheme.heading3,
+      padding: const EdgeInsets.fromLTRB(24, 20, 24, 30),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 50, height: 50,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Colors.grey.shade800,
+                  border: Border.all(color: AppTheme.primaryColor, width: 2),
+                ),
+                child: const Icon(Icons.person, color: Colors.white),
+              ),
+              const SizedBox(width: 12),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text("WELCOME BACK", style: AppTheme.bodySmall.copyWith(fontSize: 10, letterSpacing: 1, fontWeight: FontWeight.bold)),
+                  Text(userRole ?? "User", style: AppTheme.heading2.copyWith(fontSize: 20)),
+                ],
+              ),
+            ],
+          ),
+          Container(
+            width: 45, height: 45,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: AppTheme.cardBackground,
+              border: Border.all(color: AppTheme.primaryColor.withOpacity(0.3)),
+            ),
+            child: Icon(Icons.notifications_none_rounded, color: Colors.white),
+          )
+        ],
       ),
+    );
+  }
+
+  Widget _buildMiniStat(String label, String value, {bool isColor = false}) {
+    return Column(
+      children: [
+        Text(label, style: TextStyle(color: AppTheme.textSecondary, fontSize: 12)),
+        const SizedBox(height: 4),
+        Text(value, style: TextStyle(
+          color: isColor ? AppTheme.primaryColor : Colors.white, 
+          fontWeight: FontWeight.bold, 
+          fontSize: 18)
+        ),
+      ],
     );
   }
 }
@@ -274,111 +304,95 @@ class _StatisticsGrid extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // If Client, filter out Bookings and Analytics/Feedbacks if requested
-    // User requested "No booking and feedback", assuming they want to see Sessions?
-    // User said: "I don't want booking and feedback"
-    // Wait, typically Clients see Sessions.
-    // If Admin/Coach -> Members. If !!Admin/Coach -> Feedbacks.
-    // If Client, we hide Feedbacks.
+    // Custom logic to match the "Quick Actions" grid look
+    // 1. Sessions (Book Class style) - Big Green Button if possible, or just first tile
     
-    // Let's filter the items list logic
-    final children = <Widget>[];
-
-    // 1. Sessions (Always visible)
-    children.add(
-      _StatCard(
-        title: 'Sessions',
-        subtitle: 'Active track',
-        icon: Icons.calendar_today_rounded,
-        onTap: () {
-          context.read<SessionCubit>().loadSessions();
-          Navigator.push(context, _createRoute(const SessionListPage()));
-        },
-      ),
-    );
-
-    // 2. Members (Admin/Coach) OR Feedbacks (Member/Client?)
-    // User said "No feedback" for Client.
-    if (isAdmin || isCoach) {
-      children.add(
-        _StatCard(
-          title: 'Members',
-          subtitle: 'Directory',
-          icon: Icons.people_outline_rounded,
+    return Column(
+      children: [
+        // Row 1: Book Class (Sessions) - Big Button
+        _ActionCard(
+          title: "Book Class",
+          icon: Icons.calendar_today_rounded,
+          isPrimary: true,
           onTap: () {
-            context.read<MemberCubit>().loadMembers();
-            Navigator.push(context, _createRoute(const MemberListPage()));
+            context.read<SessionCubit>().loadSessions();
+            Navigator.push(context, _createRoute(const SessionListPage()));
           },
         ),
-      );
-    } else if (!isClient) { // Hide Feedback for Client
-      children.add(
-        _StatCard(
-          title: 'Feedbacks',
-          subtitle: 'Your voice',
-          icon: Icons.chat_bubble_outline_rounded,
-          onTap: () {
-            context.read<FeedbackCubit>().loadFeedbacks();
-            Navigator.push(context, _createRoute(const FeedbackListPage()));
-          },
+        const SizedBox(height: 16),
+        // Row 2: Grid for others
+        Row(
+          children: [
+            // Feedbacks/Members
+            if (isAdmin || isCoach)
+              Expanded(
+                child: _ActionCard(
+                  title: "Members",
+                  icon: Icons.people_outline_rounded,
+                  isPrimary: false,
+                  onTap: () {
+                    context.read<MemberCubit>().loadMembers();
+                    Navigator.push(context, _createRoute(const MemberListPage()));
+                  },
+                ),
+              )
+            else if (!isClient)
+              Expanded(
+                child: _ActionCard(
+                  title: "Feedback",
+                  icon: Icons.thumb_up_alt_outlined,
+                  isPrimary: false,
+                  onTap: () {
+                    context.read<FeedbackCubit>().loadFeedbacks();
+                    Navigator.push(context, _createRoute(const FeedbackListPage()));
+                  },
+                ),
+              ),
+            
+            if (!isClient) ...[
+              const SizedBox(width: 16),
+              Expanded(
+                child: _ActionCard(
+                  title: "History",
+                  icon: Icons.history_rounded,
+                  isPrimary: false,
+                  onTap: () {
+                    context.read<BookingCubit>().loadBookings();
+                    Navigator.push(context, _createRoute(const BookingListPage()));
+                  },
+                ),
+              ),
+            ] else 
+               const Spacer(), // Balance layout if client
+          ],
         ),
-      );
-    }
-
-    // 3. Bookings (Hide for Client)
-    if (!isClient) {
-      children.add(
-        _StatCard(
-          title: 'Bookings',
-          subtitle: 'Schedule',
-          icon: Icons.confirmation_number_outlined,
-          onTap: () {
-            context.read<BookingCubit>().loadBookings();
-            Navigator.push(context, _createRoute(const BookingListPage()));
-          },
-        ),
-      );
-    }
-
-    // 4. Analytics (Hide for Client)
-    // User said "Change booking and feedback And progress".
-    // Assuming "progress" refers to "Analytics".
-    if (!isClient) {
-      children.add(
-        _StatCard(
-          title: 'Analytics',
-          subtitle: 'Reports',
-          icon: Icons.analytics_outlined,
-          onTap: () {
-            context.read<ProgressCubit>().loadProgress();
-            Navigator.push(context, _createRoute(const ProgressListPage()));
-          },
-        ),
-      );
-    }
-
-    return GridView.count(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      crossAxisCount: 2,
-      mainAxisSpacing: AppTheme.spacingMD,
-      crossAxisSpacing: AppTheme.spacingMD,
-      childAspectRatio: 1.1,
-      children: children,
+        if (!isClient) ...[
+          const SizedBox(height: 16),
+           _ActionCard(
+            title: "Analytics",
+            icon: Icons.bar_chart_rounded,
+            isPrimary: false,
+             onTap: () {
+              context.read<ProgressCubit>().loadProgress();
+              Navigator.push(context, _createRoute(const ProgressListPage()));
+            },
+          ),
+        ]
+      ],
     );
   }
 }
 
-class _StatCard extends StatelessWidget {
+class _ActionCard extends StatelessWidget {
   final String title;
-  final String subtitle;
   final IconData icon;
+  final bool isPrimary;
   final VoidCallback onTap;
 
-  const _StatCard({
+  const _ActionCard({
     required this.title,
-    required this.subtitle,
     required this.icon,
+    required this.isPrimary,
     required this.onTap,
   });
 
@@ -387,34 +401,32 @@ class _StatCard extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        decoration: AppTheme.cardDecoration(
-          color: AppTheme.primaryColor, // البطاقات باللون الأسود الكربوني
-          shadows: AppTheme.elevatedShadow,
+        height: 100, // Fixed height for consistency
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: isPrimary ? AppTheme.primaryColor : AppTheme.cardBackground,
+          borderRadius: BorderRadius.circular(24),
+          border: isPrimary ? null : Border.all(color: const Color(0xFFDDDDDD)),
+          boxShadow: isPrimary 
+              ? [BoxShadow(color: AppTheme.primaryColor.withOpacity(0.4), blurRadius: 12, offset: const Offset(0, 4))] 
+              : null,
         ),
-        child: Stack(
+        child: Row(
           children: [
-            Positioned(
-              right: -5,
-              bottom: -5,
-              child: Icon(icon, size: 60, color: Colors.white.withOpacity(0.05)),
+            Container(
+              width: 50, height: 50,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: isPrimary ? Colors.black.withOpacity(0.1) : Colors.white.withOpacity(0.05),
+              ),
+              child: Icon(icon, color: isPrimary ? const Color(0xFF112117) : Colors.white),
             ),
-            Padding(
-              padding: const EdgeInsets.all(AppTheme.spacingMD),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(icon, color: AppTheme.infoColor, size: 28),
-                  const SizedBox(height: AppTheme.spacingSM),
-                  Text(
-                    title,
-                    style: AppTheme.bodyLarge.copyWith(color: Colors.white, fontWeight: FontWeight.bold),
-                  ),
-                  Text(
-                    subtitle,
-                    style: AppTheme.bodySmall.copyWith(color: Colors.white.withOpacity(0.5)),
-                  ),
-                ],
+            const SizedBox(width: 16),
+            Text(
+              title,
+              style: AppTheme.heading3.copyWith(
+                color: isPrimary ? const Color(0xFF112117) : Colors.white,
+                fontSize: 18
               ),
             ),
           ],
@@ -424,79 +436,6 @@ class _StatCard extends StatelessWidget {
   }
 }
 
-class _QuickAccessList extends StatelessWidget {
-  final bool isAdmin;
-  final bool isCoach;
-  final bool isClient; // Add isClient
-
-  const _QuickAccessList({required this.isAdmin, required this.isCoach, required this.isClient});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: AppTheme.cardDecoration(),
-      child: Column(
-        children: [
-          // Hide Feedback for Client
-          if (!isClient)
-          _QuickTile(
-            title: 'Customer Feedbacks',
-            icon: Icons.star_outline_rounded,
-            color: AppTheme.warningColor,
-            onTap: () {
-              context.read<FeedbackCubit>().loadFeedbacks();
-              Navigator.push(context, _createRoute(const FeedbackListPage()));
-            },
-          ),
-          if (isAdmin) ...[
-            const Divider(height: 1, indent: 20, endIndent: 20),
-            _QuickTile(
-              title: 'Coaches Portal',
-              icon: Icons.shield_outlined,
-              color: AppTheme.successColor,
-              onTap: () {
-                context.read<CoachCubit>().loadCoaches();
-                Navigator.push(context, _createRoute(const CoachListPage()));
-              },
-            ),
-            const Divider(height: 1, indent: 20, endIndent: 20),
-            _QuickTile(
-              title: 'User Management',
-              icon: Icons.manage_accounts_outlined,
-              color: Colors.purple,
-              onTap: () {
-                Navigator.push(context, _createRoute(const UserManagementPage()));
-              },
-            ),
-          ]
-        ],
-      ),
-    );
-  }
-}
-
-class _QuickTile extends StatelessWidget {
-  final String title;
-  final IconData icon;
-  final VoidCallback onTap;
-  final Color color;
-
-  const _QuickTile({required this.title, required this.icon, required this.onTap, required this.color});
-
-  @override
-  Widget build(BuildContext context) {
-    return ListTile(
-      onTap: onTap,
-      leading: Container(
-        padding: const EdgeInsets.all(8),
-        decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(8)),
-        child: Icon(icon, color: color),
-      ),
-      title: Text(title, style: AppTheme.bodyMedium.copyWith(fontWeight: FontWeight.bold)),
-      trailing: const Icon(Icons.chevron_right, color: AppTheme.textLight),
-    );
-  }
-}
 
 class _RecentClasses extends StatelessWidget {
   const _RecentClasses();
@@ -505,7 +444,7 @@ class _RecentClasses extends StatelessWidget {
   Widget build(BuildContext context) {
     return BlocBuilder<ClassTypeCubit, ClassTypeState>(
       builder: (context, state) {
-        if (state is ClassTypeLoading) return const ShimmerEffect(isLoading: true, itemCount: 2);
+        if (state is ClassTypeLoading) return const ShimmerEffect(isLoading: true, itemCount: 1);
         if (state is ClassTypesLoaded) {
           return Column(
             children: state.classTypes.take(2).map((item) => _ClassItem(item: item)).toList(),
@@ -524,32 +463,54 @@ class _ClassItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: const EdgeInsets.only(bottom: AppTheme.spacingMD),
-      padding: const EdgeInsets.all(AppTheme.spacingMD),
-      decoration: AppTheme.cardDecoration(),
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppTheme.cardBackground,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Colors.white.withOpacity(0.05)),
+      ),
       child: Row(
         children: [
           Container(
-            height: 50, width: 50,
+            height: 60, width: 60,
             decoration: BoxDecoration(
-              color: AppTheme.primaryColor,
-              borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
+              color: AppTheme.primaryColor.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: AppTheme.primaryColor.withOpacity(0.2)),
             ),
-            child: const Icon(Icons.bolt, color: Colors.white),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text("NOW", style: TextStyle(color: AppTheme.primaryColor, fontWeight: FontWeight.bold, fontSize: 10)),
+                const Icon(Icons.bolt, color: AppTheme.primaryColor),
+              ],
+            ),
           ),
-          const SizedBox(width: AppTheme.spacingMD),
+          const SizedBox(width: 16),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(item.name ?? 'Class', style: AppTheme.bodyLarge.copyWith(fontWeight: FontWeight.bold)),
-                Text('Professional Training', style: AppTheme.bodySmall),
+                const SizedBox(height: 4),
+                Row(
+                  children: [
+                    Icon(Icons.schedule, size: 14, color: AppTheme.textSecondary),
+                    const SizedBox(width: 4),
+                    Text('60 min', style: AppTheme.bodySmall),
+                  ],
+                )
               ],
             ),
           ),
-          IconButton(
-            onPressed: () => Navigator.push(context, _createRoute(const ClassTypeListPage())),
-            icon: const Icon(Icons.arrow_forward_ios, size: 16),
+          Container(
+             width: 40, height: 40,
+             decoration: BoxDecoration(
+               shape: BoxShape.circle,
+               color: Colors.white.withOpacity(0.05),
+             ),
+             child: const Icon(Icons.arrow_forward, color: Colors.white, size: 20),
           )
         ],
       ),

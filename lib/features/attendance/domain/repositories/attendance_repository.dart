@@ -1,6 +1,6 @@
-import 'package:maa3/features/attendance/data/models/create_attendance_model.dart';
-import 'package:maa3/features/attendance/data/models/update_attendance_model.dart';
-import 'package:maa3/features/attendance/domain/entities/attendance_entity.dart';
+import 'package:thesavage/features/attendance/data/models/create_attendance_model.dart';
+import 'package:thesavage/features/attendance/data/models/update_attendance_model.dart';
+import 'package:thesavage/features/attendance/domain/entities/attendance_entity.dart';
 
 abstract class AttendanceRepository {
   Future<List<AttendanceEntity>> getAllAttendances();

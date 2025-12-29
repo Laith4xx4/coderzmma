@@ -1,11 +1,11 @@
 import 'package:bloc/bloc.dart';
-import 'package:maa3/features/feedbacks/data/models/create_feedback_model.dart';
-import 'package:maa3/features/feedbacks/data/models/update_feedback_model.dart';
-import 'package:maa3/features/feedbacks/domain/use_cases/create_feedback.dart';
-import 'package:maa3/features/feedbacks/domain/use_cases/delete_feedback.dart';
-import 'package:maa3/features/feedbacks/domain/use_cases/get_all_feedbacks.dart';
-import 'package:maa3/features/feedbacks/domain/use_cases/update_feedback.dart';
-import 'package:maa3/features/feedbacks/presentation/bloc/feedback_state.dart';
+import 'package:thesavage/features/feedbacks/data/models/create_feedback_model.dart';
+import 'package:thesavage/features/feedbacks/data/models/update_feedback_model.dart';
+import 'package:thesavage/features/feedbacks/domain/use_cases/create_feedback.dart';
+import 'package:thesavage/features/feedbacks/domain/use_cases/delete_feedback.dart';
+import 'package:thesavage/features/feedbacks/domain/use_cases/get_all_feedbacks.dart';
+import 'package:thesavage/features/feedbacks/domain/use_cases/update_feedback.dart';
+import 'package:thesavage/features/feedbacks/presentation/bloc/feedback_state.dart';
 
 class FeedbackCubit extends Cubit<FeedbackState> {
   final GetAllFeedbacks getAllFeedbacks;

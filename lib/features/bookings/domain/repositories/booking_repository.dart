@@ -1,6 +1,6 @@
-import 'package:maa3/features/bookings/domain/entities/booking_entity.dart';
-import 'package:maa3/features/bookings/data/models/create_booking_model.dart';
-import 'package:maa3/features/bookings/data/models/update_booking_model.dart';
+import 'package:thesavage/features/bookings/domain/entities/booking_entity.dart';
+import 'package:thesavage/features/bookings/data/models/create_booking_model.dart';
+import 'package:thesavage/features/bookings/data/models/update_booking_model.dart';
 
 abstract class BookingRepository {
   Future<List<BookingEntity>> getAllBookings();

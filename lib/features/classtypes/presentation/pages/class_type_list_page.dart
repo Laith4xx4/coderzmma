@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:maa3/core/role_helper.dart';
-import 'package:maa3/core/app_theme.dart';
-import 'package:maa3/features/classtypes/data/models/create_class_type_model.dart';
-import 'package:maa3/features/classtypes/presentation/bloc/class_type_cubit.dart';
-import 'package:maa3/features/classtypes/presentation/bloc/class_type_state.dart';
-import 'package:maa3/features/sessions/presentation/pages/session_list_page.dart';
-import 'package:maa3/widgets/ShimmerEffect.dart';
+import 'package:thesavage/core/role_helper.dart';
+import 'package:thesavage/core/app_theme.dart';
+import 'package:thesavage/features/classtypes/data/models/create_class_type_model.dart';
+import 'package:thesavage/features/classtypes/presentation/bloc/class_type_cubit.dart';
+import 'package:thesavage/features/classtypes/presentation/bloc/class_type_state.dart';
+import 'package:thesavage/features/sessions/presentation/pages/session_list_page.dart';
+import 'package:thesavage/widgets/ShimmerEffect.dart';
 
 import '../widget/ClassTypeCard.dart';
 
@@ -360,7 +360,7 @@ class _EmptyState extends StatelessWidget {
             color: AppTheme.textLight.withAlpha(128), // ✅ withAlpha بدلاً من withOpacity
           ),
           const SizedBox(height: 16),
-          const Text('No class types found.', style: AppTheme.bodyMedium),
+          Text('No class types found.', style: AppTheme.bodyMedium),
         ],
       ),
     );
@@ -388,7 +388,7 @@ class _ErrorState extends StatelessWidget {
             color: Colors.redAccent,
           ),
           const SizedBox(height: 16),
-          const Text('Something went wrong.', style: AppTheme.bodyLarge),
+          Text('Something went wrong.', style: AppTheme.bodyLarge),
           TextButton(
             onPressed: onRetry,
             child: const Text(

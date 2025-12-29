@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:maa3/features/classtypes/domain/entities/class_type_entity.dart';
-import 'package:maa3/features/classtypes/presentation/bloc/class_type_cubit.dart';
-import 'package:maa3/features/classtypes/presentation/bloc/class_type_state.dart';
+import 'package:thesavage/features/classtypes/domain/entities/class_type_entity.dart';
+import 'package:thesavage/features/classtypes/presentation/bloc/class_type_cubit.dart';
+import 'package:thesavage/features/classtypes/presentation/bloc/class_type_state.dart';
 
 class Classtype extends StatelessWidget {
   const Classtype({super.key});

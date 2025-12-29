@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:maa3/core/app_theme.dart';
-import 'package:maa3/features/classtypes/domain/entities/class_type_entity.dart';
-import 'package:maa3/widgets/modern_card.dart';
+import 'package:thesavage/core/app_theme.dart';
+import 'package:thesavage/features/classtypes/domain/entities/class_type_entity.dart';
+import 'package:thesavage/widgets/modern_card.dart';
 
 
 class ClassTypeCard extends StatelessWidget {

@@ -1,5 +1,5 @@
-import 'package:maa3/features/memberpro/domain/entities/member_profile_entity.dart';
-import 'package:maa3/features/memberpro/domain/repositories/member_repository.dart';
+import 'package:thesavage/features/memberpro/domain/entities/member_profile_entity.dart';
+import 'package:thesavage/features/memberpro/domain/repositories/member_repository.dart';
 
 
 class DeleteMember {

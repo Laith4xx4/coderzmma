@@ -2,11 +2,11 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_sign_in/google_sign_in.dart'; // Added
 import 'package:firebase_auth/firebase_auth.dart' as firebase_auth; // Added
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:maa3/features/auth1/presentation/bloc/auth_state.dart';
-import 'package:maa3/features/auth1/domain/use_cases/login_user.dart';
-import 'package:maa3/features/auth1/domain/use_cases/register_user.dart';
-import 'package:maa3/features/auth1/domain/use_cases/google_login_user.dart'; // Added
-import 'package:maa3/features/auth1/domain/repositories/auth_repository.dart';
+import 'package:thesavage/features/auth1/presentation/bloc/auth_state.dart';
+import 'package:thesavage/features/auth1/domain/use_cases/login_user.dart';
+import 'package:thesavage/features/auth1/domain/use_cases/register_user.dart';
+import 'package:thesavage/features/auth1/domain/use_cases/google_login_user.dart'; // Added
+import 'package:thesavage/features/auth1/domain/repositories/auth_repository.dart';
 
 class AuthCubit extends Cubit<AuthState> {
   final LoginUser _loginUser;
@@ -28,7 +28,7 @@ class AuthCubit extends Cubit<AuthState> {
       // Step 1: Sign in with Google
       final GoogleSignIn googleSignIn = GoogleSignIn(
         scopes: ['email'],
-        clientId: '713764696012-lpi2c1dsig6t6mgsj9leiup44ff2gec6.apps.googleusercontent.com',
+        serverClientId: '713764696012-lpi2c1dsig6t6mgsj9leiup44ff2gec6.apps.googleusercontent.com',
       );
       
       final GoogleSignInAccount? googleUser = await googleSignIn.signIn();

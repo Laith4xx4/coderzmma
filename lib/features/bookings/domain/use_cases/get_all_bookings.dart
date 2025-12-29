@@ -1,5 +1,5 @@
-import 'package:maa3/features/bookings/domain/entities/booking_entity.dart';
-import 'package:maa3/features/bookings/domain/repositories/booking_repository.dart';
+import 'package:thesavage/features/bookings/domain/entities/booking_entity.dart';
+import 'package:thesavage/features/bookings/domain/repositories/booking_repository.dart';
 
 class GetAllBookings {
   final BookingRepository repository;

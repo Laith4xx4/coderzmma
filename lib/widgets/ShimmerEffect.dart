@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:shimmer/shimmer.dart';
-import 'package:maa3/core/app_theme.dart';
+import 'package:thesavage/core/app_theme.dart';
 
 class ShimmerEffect extends StatelessWidget {
   final Widget? child; // جعلناه اختيارياً بتغييره إلى Widget?

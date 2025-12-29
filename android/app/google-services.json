@@ -9,7 +9,7 @@
       "client_info": {
         "mobilesdk_app_id": "1:713764696012:android:7fa13a2365134a0c8ab769",
         "android_client_info": {
-          "package_name": "com.example.maa3"
+          "package_name": "com.thesavage.mma"
         }
       },
       "oauth_client": [
@@ -17,7 +17,7 @@
           "client_id": "713764696012-mns5cidhf4l9vkmsk8kcjpu0usncenpd.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {
-            "package_name": "com.example.maa3",
+            "package_name": "com.thesavage.mma",
             "certificate_hash": "0eac6e767e81d8d00df5ee552da29f8fc9e9e1af"
           }
         },
@@ -42,7 +42,7 @@
               "client_id": "713764696012-70hdomm61pqfaegjrn9q2rlfu6k9hnm1.apps.googleusercontent.com",
               "client_type": 2,
               "ios_info": {
-                "bundle_id": "com.example.maa3"
+                "bundle_id": "com.thesavage.mma"
               }
             }
           ]

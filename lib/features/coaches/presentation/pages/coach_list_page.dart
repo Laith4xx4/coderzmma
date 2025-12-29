@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:maa3/core/app_theme.dart';
-import 'package:maa3/widgets/modern_card.dart';
-import 'package:maa3/features/coaches/domain/entities/coach_entity.dart';
-import 'package:maa3/features/coaches/data/models/create_coach_model.dart';
-import 'package:maa3/features/coaches/data/models/update_coach_model.dart';
-import 'package:maa3/features/coaches/presentation/bloc/coach_cubit.dart';
-import 'package:maa3/features/coaches/presentation/bloc/coach_state.dart';
+import 'package:thesavage/core/app_theme.dart';
+import 'package:thesavage/widgets/modern_card.dart';
+import 'package:thesavage/features/coaches/domain/entities/coach_entity.dart';
+import 'package:thesavage/features/coaches/data/models/create_coach_model.dart';
+import 'package:thesavage/features/coaches/data/models/update_coach_model.dart';
+import 'package:thesavage/features/coaches/presentation/bloc/coach_cubit.dart';
+import 'package:thesavage/features/coaches/presentation/bloc/coach_state.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class CoachListPage extends StatefulWidget {

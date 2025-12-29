@@ -1,15 +1,15 @@
-import 'dart:async'; // Added
+import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:maa3/screen/SP.dart';
-import 'package:maa3/screen/splash.dart';
-import 'package:maa3/widgets/bardown.dart';
+import 'package:thesavage/core/app_theme.dart';
+import 'package:thesavage/screen/SP.dart';
+
 import 'core/injection_container.dart' as di;
 import 'core/bloc_providers.dart';
 
 import 'package:firebase_core/firebase_core.dart';
 import 'package:easy_localization/easy_localization.dart';
-// 1. استيراد الملف الذي تم إنشاؤه بواسطة flutterfire
 import 'firebase_options.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 
@@ -17,21 +17,24 @@ void main() async {
   runZonedGuarded(() async {
     WidgetsFlutterBinding.ensureInitialized();
 
-    // 2. تحديث تهيئة Firebase لاستخدام خيارات المنصة الحالية
+    // تهيئة Firebase
     await Firebase.initializeApp(
       options: DefaultFirebaseOptions.currentPlatform,
     );
-    
-    // Initialize Google Mobile Ads
-    await MobileAds.instance.initialize();
+
+    // حل مشكلة التوقف: تهيئة الإعلانات فقط إذا لم يكن الجهاز "ويب"
+    // لأن مكتبة الإعلانات تسبب Crash على المتصفح إذا لم يتم إعدادها بشكل خاص
+    if (!kIsWeb) {
+      await MobileAds.instance.initialize();
+    }
 
     await EasyLocalization.ensureInitialized();
     await di.init();
-    
+
     runApp(
       EasyLocalization(
         supportedLocales: const [Locale('en'), Locale('ar')],
-        path: 'assets/translations', 
+        path: 'assets/translations',
         fallbackLocale: const Locale('en'),
         child: const MyApp(),
       ),
@@ -51,13 +54,21 @@ class MyApp extends StatelessWidget {
       child: MaterialApp(
         debugShowCheckedModeBanner: false,
         theme: ThemeData(
-          colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
-          useMaterial3: true, // اختياري: لتفعيل أحدث واجهات جوجل
+          scaffoldBackgroundColor: AppTheme.backgroundColor,
+          brightness: Brightness.dark,
+          primaryColor: AppTheme.primaryColor,
+          colorScheme: const ColorScheme.dark(
+            primary: AppTheme.primaryColor,
+            surface: AppTheme.cardBackground,
+            onSurface: AppTheme.textPrimary,
+            background: AppTheme.backgroundColor,
+          ),
+          useMaterial3: true,
         ),
         localizationsDelegates: context.localizationDelegates,
         supportedLocales: context.supportedLocales,
         locale: context.locale,
-        home: const Sp(), // تأكد من إضافة const إذا كانت الشاشة ثابتة
+        home: const Sp(),
       ),
     );
   }

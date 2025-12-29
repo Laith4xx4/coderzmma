@@ -1,11 +1,11 @@
 import 'package:bloc/bloc.dart';
-import 'package:maa3/features/attendance/data/models/create_attendance_model.dart';
-import 'package:maa3/features/attendance/data/models/update_attendance_model.dart';
-import 'package:maa3/features/attendance/domain/use_cases/create_attendance.dart';
-import 'package:maa3/features/attendance/domain/use_cases/delete_attendance.dart';
-import 'package:maa3/features/attendance/domain/use_cases/get_all_attendances.dart';
-import 'package:maa3/features/attendance/domain/use_cases/update_attendance.dart';
-import 'package:maa3/features/attendance/presentation/bloc/attendance_state.dart';
+import 'package:thesavage/features/attendance/data/models/create_attendance_model.dart';
+import 'package:thesavage/features/attendance/data/models/update_attendance_model.dart';
+import 'package:thesavage/features/attendance/domain/use_cases/create_attendance.dart';
+import 'package:thesavage/features/attendance/domain/use_cases/delete_attendance.dart';
+import 'package:thesavage/features/attendance/domain/use_cases/get_all_attendances.dart';
+import 'package:thesavage/features/attendance/domain/use_cases/update_attendance.dart';
+import 'package:thesavage/features/attendance/presentation/bloc/attendance_state.dart';
 
 class AttendanceCubit extends Cubit<AttendanceState> {
   final GetAllAttendances getAllAttendances;

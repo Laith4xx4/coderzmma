@@ -1,6 +1,6 @@
-import 'package:maa3/features/memberpro/data/datasource/member_api_service.dart';
-import 'package:maa3/features/memberpro/domain/entities/member_profile_entity.dart';
-import 'package:maa3/features/memberpro/domain/repositories/member_repository.dart';
+import 'package:thesavage/features/memberpro/data/datasource/member_api_service.dart';
+import 'package:thesavage/features/memberpro/domain/entities/member_profile_entity.dart';
+import 'package:thesavage/features/memberpro/domain/repositories/member_repository.dart';
 
 import '../models/create_member_profile_model.dart';
 import '../models/update_member_profile_model.dart';

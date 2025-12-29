@@ -6,9 +6,9 @@ class RoleHelper {
   static const String memberRole = 'Member';
 
   /// جلب معرف المستخدم الحالي (ID)
-  static Future<int?> getCurrentUserId() async {
+  static Future<String?> getCurrentUserId() async {
     final prefs = await SharedPreferences.getInstance();
-    return prefs.getInt("userId");
+    return prefs.getString("userId");
   }
 
   /// جلب اسم المستخدم الحالي (UserName) - جديد

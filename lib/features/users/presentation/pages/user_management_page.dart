@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:maa3/core/app_theme.dart';
-import 'package:maa3/core/role_helper.dart';
-import 'package:maa3/features/users/data/datasource/user_api_service.dart';
-import 'package:maa3/features/users/domain/entities/user_entity.dart';
+import 'package:thesavage/core/app_theme.dart';
+import 'package:thesavage/core/role_helper.dart';
+import 'package:thesavage/features/users/data/datasource/user_api_service.dart';
+import 'package:thesavage/features/users/domain/entities/user_entity.dart';
 
 class UserManagementPage extends StatefulWidget {
   const UserManagementPage({Key? key}) : super(key: key);
@@ -62,7 +62,7 @@ class _UserManagementPageState extends State<UserManagementPage> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Confirm Role Change', style: AppTheme.heading3),
+        title: Text('Confirm Role Change', style: AppTheme.heading3),
         content: Text(
           'Change ${user.userName}\'s role from ${user.role} to $newRole?',
           style: AppTheme.bodyMedium,
@@ -110,7 +110,7 @@ class _UserManagementPageState extends State<UserManagementPage> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Confirm Delete', style: AppTheme.heading3),
+        title: Text('Confirm Delete', style: AppTheme.heading3),
         content: Text(
           'Are you sure you want to delete user "${user.userName}"?\n\nThis action cannot be undone.',
           style: AppTheme.bodyMedium,

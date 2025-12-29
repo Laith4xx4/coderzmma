@@ -1,4 +1,4 @@
-import 'package:maa3/features/feedbacks/domain/repositories/feedback_repository.dart';
+import 'package:thesavage/features/feedbacks/domain/repositories/feedback_repository.dart';
 
 class DeleteFeedback {
   final FeedbackRepository repository;

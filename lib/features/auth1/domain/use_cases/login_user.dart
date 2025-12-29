@@ -1,5 +1,5 @@
-import 'package:maa3/features/auth1/domain/entities/user.dart';
-import 'package:maa3/features/auth1/domain/repositories/auth_repository.dart';
+import 'package:thesavage/features/auth1/domain/entities/user.dart';
+import 'package:thesavage/features/auth1/domain/repositories/auth_repository.dart';
 
 /// 🧠 LoginUser:
 /// هذا هو "Use Case" (حالة استخدام) في طبقة الـ Domain.

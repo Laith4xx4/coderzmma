@@ -1,10 +1,10 @@
 import 'package:animated_bottom_navigation_bar/animated_bottom_navigation_bar.dart';
 import 'package:flutter/material.dart';
-import 'package:maa3/core/app_theme.dart';
-import 'package:maa3/features/classtypes/presentation/pages/class_type_list_page.dart';
-import 'package:maa3/screen/home.dart';
-import 'package:maa3/screen/person.dart';
-import 'package:maa3/widgets/sessionw.dart';
+import 'package:thesavage/core/app_theme.dart';
+import 'package:thesavage/features/classtypes/presentation/pages/class_type_list_page.dart';
+import 'package:thesavage/screen/home.dart';
+import 'package:thesavage/screen/person.dart';
+import 'package:thesavage/widgets/sessionw.dart';
 
 import '../screen/AboutPage.dart';
 
@@ -21,7 +21,7 @@ class _AnimatedNavExampleState extends State<AnimatedNavExample> {
   final iconList = <IconData>[
     Icons.grid_view_rounded,     // Home
     Icons.fitness_center_rounded, // Classes
-    Icons.calendar_month_rounded, // Sessions
+    Icons.info_outline_rounded,         // About, // Sessions
     Icons.account_circle_rounded, // Profile
   ];
 
@@ -41,13 +41,19 @@ class _AnimatedNavExampleState extends State<AnimatedNavExample> {
 
       // الزر العائم بتصميم أسود فخم (Monochrome)
       floatingActionButton: Container(
-        height: 65,
-        width: 65,
+        height: 70,
+        width: 70,
         decoration: BoxDecoration(
-          gradient: AppTheme.primaryGradient, // تدرج السكني والأسود
+          color: AppTheme.primaryColor,
           shape: BoxShape.circle,
-          boxShadow: AppTheme.elevatedShadow,
-          border: Border.all(color: Colors.white, width: 2), // إطار أبيض لإبرازه
+          boxShadow: [
+            BoxShadow(
+              color: AppTheme.primaryColor.withOpacity(0.4),
+              blurRadius: 20,
+              offset: const Offset(0, 8),
+            )
+          ],
+          border: Border.all(color: const Color(0xFF112117), width: 4), // Dark ring around FAB
         ),
         child: FloatingActionButton(
           onPressed: () {
@@ -55,7 +61,7 @@ class _AnimatedNavExampleState extends State<AnimatedNavExample> {
           },
           backgroundColor: Colors.transparent,
           elevation: 0,
-          child: const Icon(Icons.home_filled, color: Colors.white, size: 30),
+          child: const Icon(Icons.home_rounded, color: Color(0xFF112117), size: 32),
         ),
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
@@ -73,33 +79,27 @@ class _AnimatedNavExampleState extends State<AnimatedNavExample> {
                 size: isActive ? 28 : 24,
                 color: color,
               ),
-              const SizedBox(height: 4),
-              // مؤشر سفلي أنيق عند التفعيل
-              AnimatedContainer(
-                duration: const Duration(milliseconds: 300),
-                width: isActive ? 12 : 0,
-                height: 2,
+              if (isActive)
+              Container(
+                margin: const EdgeInsets.only(top: 4),
+                width: 4, height: 4,
                 decoration: BoxDecoration(
-                  color: color,
-                  borderRadius: BorderRadius.circular(10),
+                  color: AppTheme.primaryColor,
+                  shape: BoxShape.circle,
+                  boxShadow: [BoxShadow(color: AppTheme.primaryColor.withOpacity(0.5), blurRadius: 6)]
                 ),
-              ),
+              )
             ],
           );
         },
         activeIndex: _bottomNavIndex,
         gapLocation: GapLocation.center,
-        notchSmoothness: NotchSmoothness.softEdge, // نعومة أكثر للانحناء
-        leftCornerRadius: 32,
-        rightCornerRadius: 32,
-        backgroundColor: Colors.white, // خلفية بيضاء نقية
-        elevation: 20,
+        notchSmoothness: NotchSmoothness.smoothEdge, 
+        leftCornerRadius: 20,
+        rightCornerRadius: 20,
+        backgroundColor: const Color(0xFF2B2A2A), // Dark Green Card Color
+        elevation: 0,
         onTap: (index) => setState(() => _bottomNavIndex = index),
-        shadow: Shadow(
-          color: Colors.black.withOpacity(0.1),
-          blurRadius: 20,
-          offset: const Offset(0, -5),
-        ),
       ),
     );
   }

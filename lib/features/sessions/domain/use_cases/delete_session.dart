@@ -1,4 +1,4 @@
-import 'package:maa3/features/sessions/domain/repositories/session_repository.dart';
+import 'package:thesavage/features/sessions/domain/repositories/session_repository.dart';
 
 class DeleteSession {
   final SessionRepository repository;

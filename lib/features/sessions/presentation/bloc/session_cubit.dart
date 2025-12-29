@@ -1,11 +1,11 @@
 import 'package:bloc/bloc.dart';
-import 'package:maa3/features/sessions/data/models/create_session_model.dart';
-import 'package:maa3/features/sessions/data/models/update_session_model.dart';
-import 'package:maa3/features/sessions/domain/use_cases/create_session.dart';
-import 'package:maa3/features/sessions/domain/use_cases/delete_session.dart';
-import 'package:maa3/features/sessions/domain/use_cases/get_all_sessions.dart';
-import 'package:maa3/features/sessions/domain/use_cases/update_session.dart';
-import 'package:maa3/features/sessions/presentation/bloc/session_state.dart';
+import 'package:thesavage/features/sessions/data/models/create_session_model.dart';
+import 'package:thesavage/features/sessions/data/models/update_session_model.dart';
+import 'package:thesavage/features/sessions/domain/use_cases/create_session.dart';
+import 'package:thesavage/features/sessions/domain/use_cases/delete_session.dart';
+import 'package:thesavage/features/sessions/domain/use_cases/get_all_sessions.dart';
+import 'package:thesavage/features/sessions/domain/use_cases/update_session.dart';
+import 'package:thesavage/features/sessions/presentation/bloc/session_state.dart';
 
 class SessionCubit extends Cubit<SessionState> {
   final GetAllSessions getAllSessions;

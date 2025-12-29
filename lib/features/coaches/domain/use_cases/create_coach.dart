@@ -1,6 +1,6 @@
-import 'package:maa3/features/coaches/data/models/create_coach_model.dart';
-import 'package:maa3/features/coaches/domain/entities/coach_entity.dart';
-import 'package:maa3/features/coaches/domain/repositories/coach_repository.dart';
+import 'package:thesavage/features/coaches/data/models/create_coach_model.dart';
+import 'package:thesavage/features/coaches/domain/entities/coach_entity.dart';
+import 'package:thesavage/features/coaches/domain/repositories/coach_repository.dart';
 
 class CreateCoach {
   final CoachRepository repository;

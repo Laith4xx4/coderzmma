@@ -2,14 +2,14 @@ import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
 // لم نعد بحاجة لاستيراد flutter_bloc هنا
 // import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:maa3/features/memberpro/data/models/create_member_profile_model.dart';
-import 'package:maa3/features/memberpro/data/models/update_member_profile_model.dart';
-import 'package:maa3/features/memberpro/domain/entities/member_profile_entity.dart';
-import 'package:maa3/features/memberpro/domain/use_cases/create_member.dart';
-import 'package:maa3/features/memberpro/domain/use_cases/delete_member.dart';
-import 'package:maa3/features/memberpro/domain/use_cases/get_all_members.dart';
-import 'package:maa3/features/memberpro/domain/use_cases/update_member.dart';
-import 'package:maa3/features/memberpro/presentation/bloc/member_state.dart';
+import 'package:thesavage/features/memberpro/data/models/create_member_profile_model.dart';
+import 'package:thesavage/features/memberpro/data/models/update_member_profile_model.dart';
+import 'package:thesavage/features/memberpro/domain/entities/member_profile_entity.dart';
+import 'package:thesavage/features/memberpro/domain/use_cases/create_member.dart';
+import 'package:thesavage/features/memberpro/domain/use_cases/delete_member.dart';
+import 'package:thesavage/features/memberpro/domain/use_cases/get_all_members.dart';
+import 'package:thesavage/features/memberpro/domain/use_cases/update_member.dart';
+import 'package:thesavage/features/memberpro/presentation/bloc/member_state.dart';
 
 class MemberCubit extends Cubit<MemberState> {
   final GetAllMembers getAllMembers;

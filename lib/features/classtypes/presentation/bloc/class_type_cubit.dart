@@ -1,11 +1,11 @@
 import 'package:bloc/bloc.dart';
-import 'package:maa3/features/classtypes/data/models/create_class_type_model.dart';
-import 'package:maa3/features/classtypes/data/models/update_class_type_model.dart';
-import 'package:maa3/features/classtypes/domain/use_cases/create_class_type.dart';
-import 'package:maa3/features/classtypes/domain/use_cases/delete_class_type.dart';
-import 'package:maa3/features/classtypes/domain/use_cases/get_all_class_types.dart';
-import 'package:maa3/features/classtypes/domain/use_cases/update_class_type.dart';
-import 'package:maa3/features/classtypes/presentation/bloc/class_type_state.dart';
+import 'package:thesavage/features/classtypes/data/models/create_class_type_model.dart';
+import 'package:thesavage/features/classtypes/data/models/update_class_type_model.dart';
+import 'package:thesavage/features/classtypes/domain/use_cases/create_class_type.dart';
+import 'package:thesavage/features/classtypes/domain/use_cases/delete_class_type.dart';
+import 'package:thesavage/features/classtypes/domain/use_cases/get_all_class_types.dart';
+import 'package:thesavage/features/classtypes/domain/use_cases/update_class_type.dart';
+import 'package:thesavage/features/classtypes/presentation/bloc/class_type_state.dart';
 
 class ClassTypeCubit extends Cubit<ClassTypeState> {
   final GetAllClassTypes getAllClassTypes;

@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:maa3/core/app_theme.dart'; // استيراد الثيم الجديد
-import 'package:maa3/features/auth1/presentation/bloc/auth_cubit.dart';
-import 'package:maa3/features/auth1/presentation/bloc/auth_state.dart';
-import 'package:maa3/features/auth1/presentation/pages/login_screen.dart';
+import 'package:thesavage/core/app_theme.dart'; // استيراد الثيم الجديد
+import 'package:thesavage/features/auth1/presentation/bloc/auth_cubit.dart';
+import 'package:thesavage/features/auth1/presentation/bloc/auth_state.dart';
+import 'package:thesavage/features/auth1/presentation/pages/login_screen.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -90,9 +90,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                    const SizedBox(height: 10),
-                  const Text('Create Account', style: AppTheme.heading1),
+                  Text('Create Account', style: AppTheme.heading1),
                   const SizedBox(height: 8),
-                  const Text('Sign up to start your training journey', style: AppTheme.bodyMedium),
+                  Text('Sign up to start your training journey', style: AppTheme.bodyMedium),
                   const SizedBox(height: 32),
 
                   _buildRegisterField(
@@ -198,7 +198,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const Text('Already have an account? ', style: AppTheme.bodyMedium),
+          Text('Already have an account? ', style: AppTheme.bodyMedium),
           GestureDetector(
             onTap: () => Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const LoginScreen())),
             child: const Text('Login', style: TextStyle(color: AppTheme.primaryColor, fontWeight: FontWeight.bold, decoration: TextDecoration.underline)),

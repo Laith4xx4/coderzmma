@@ -1,5 +1,5 @@
-import 'package:maa3/features/classtypes/data/models/update_class_type_model.dart';
-import 'package:maa3/features/classtypes/domain/repositories/class_type_repository.dart';
+import 'package:thesavage/features/classtypes/data/models/update_class_type_model.dart';
+import 'package:thesavage/features/classtypes/domain/repositories/class_type_repository.dart';
 
 class UpdateClassType {
   final ClassTypeRepository repository;

@@ -1,5 +1,5 @@
 import 'package:equatable/equatable.dart';
-import 'package:maa3/features/coaches/domain/entities/coach_entity.dart';
+import 'package:thesavage/features/coaches/domain/entities/coach_entity.dart';
 
 abstract class CoachState extends Equatable {
   @override

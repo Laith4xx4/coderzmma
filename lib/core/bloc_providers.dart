@@ -1,14 +1,14 @@
 // lib/core/bloc_providers.dart
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:maa3/features/auth1/presentation/bloc/auth_cubit.dart';
-import 'package:maa3/features/memberpro/presentation/bloc/member_cubit.dart';
-import 'package:maa3/features/bookings/presentation/bloc/booking_cubit.dart';
-import 'package:maa3/features/attendance/presentation/bloc/attendance_cubit.dart';
-import 'package:maa3/features/coaches/presentation/bloc/coach_cubit.dart';
-import 'package:maa3/features/classtypes/presentation/bloc/class_type_cubit.dart';
-import 'package:maa3/features/feedbacks/presentation/bloc/feedback_cubit.dart';
-import 'package:maa3/features/progress/presentation/bloc/progress_cubit.dart';
-import 'package:maa3/features/sessions/presentation/bloc/session_cubit.dart';
+import 'package:thesavage/features/auth1/presentation/bloc/auth_cubit.dart';
+import 'package:thesavage/features/memberpro/presentation/bloc/member_cubit.dart';
+import 'package:thesavage/features/bookings/presentation/bloc/booking_cubit.dart';
+import 'package:thesavage/features/attendance/presentation/bloc/attendance_cubit.dart';
+import 'package:thesavage/features/coaches/presentation/bloc/coach_cubit.dart';
+import 'package:thesavage/features/classtypes/presentation/bloc/class_type_cubit.dart';
+import 'package:thesavage/features/feedbacks/presentation/bloc/feedback_cubit.dart';
+import 'package:thesavage/features/progress/presentation/bloc/progress_cubit.dart';
+import 'package:thesavage/features/sessions/presentation/bloc/session_cubit.dart';
 import 'injection_container.dart';
 
 List<BlocProvider> get appBlocProviders => [

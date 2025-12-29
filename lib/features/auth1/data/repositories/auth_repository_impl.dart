@@ -3,9 +3,9 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:jwt_decoder/jwt_decoder.dart'; // ✅ أضف هذا المكتبة لاستخراج الاسم
 
-import 'package:maa3/features/auth1/data/models/user_model.dart';
-import 'package:maa3/features/auth1/domain/entities/user.dart';
-import 'package:maa3/features/auth1/domain/repositories/auth_repository.dart';
+import 'package:thesavage/features/auth1/data/models/user_model.dart';
+import 'package:thesavage/features/auth1/domain/entities/user.dart';
+import 'package:thesavage/features/auth1/domain/repositories/auth_repository.dart';
 
 class AuthRepositoryImpl implements AuthRepository {
   final String baseUrl;

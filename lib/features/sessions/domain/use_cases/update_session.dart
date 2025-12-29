@@ -1,5 +1,5 @@
-import 'package:maa3/features/sessions/data/models/update_session_model.dart';
-import 'package:maa3/features/sessions/domain/repositories/session_repository.dart';
+import 'package:thesavage/features/sessions/data/models/update_session_model.dart';
+import 'package:thesavage/features/sessions/domain/repositories/session_repository.dart';
 
 class UpdateSession {
   final SessionRepository repository;

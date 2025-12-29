@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:maa3/core/role_helper.dart';
-import 'package:maa3/core/app_theme.dart';
-import 'package:maa3/widgets/modern_card.dart';
-import 'package:maa3/features/memberpro/domain/entities/member_profile_entity.dart';
-import 'package:maa3/features/memberpro/data/models/create_member_profile_model.dart';
-import 'package:maa3/features/memberpro/data/models/update_member_profile_model.dart';
-import 'package:maa3/features/memberpro/presentation/bloc/member_cubit.dart';
-import 'package:maa3/features/memberpro/presentation/bloc/member_state.dart';
+import 'package:thesavage/core/role_helper.dart';
+import 'package:thesavage/core/app_theme.dart';
+import 'package:thesavage/widgets/modern_card.dart';
+import 'package:thesavage/features/memberpro/domain/entities/member_profile_entity.dart';
+import 'package:thesavage/features/memberpro/data/models/create_member_profile_model.dart';
+import 'package:thesavage/features/memberpro/data/models/update_member_profile_model.dart';
+import 'package:thesavage/features/memberpro/presentation/bloc/member_cubit.dart';
+import 'package:thesavage/features/memberpro/presentation/bloc/member_state.dart';
 
 class MemberListPage extends StatefulWidget {
   const MemberListPage({super.key});

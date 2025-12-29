@@ -1,6 +1,6 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import 'package:maa3/core/api_strings.dart';
+import 'package:thesavage/core/api_strings.dart';
 
 class AuthApiService {
   final String _baseUrl = ApiStrings.baseUrl;

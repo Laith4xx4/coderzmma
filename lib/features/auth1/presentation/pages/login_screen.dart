@@ -1,12 +1,14 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:jwt_decoder/jwt_decoder.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'package:maa3/core/app_theme.dart';
-import 'package:maa3/features/auth1/presentation/bloc/auth_cubit.dart';
-import 'package:maa3/features/auth1/presentation/bloc/auth_state.dart';
-import 'package:maa3/features/auth1/presentation/pages/register_screen.dart';
-import '../../../../widgets/AnimatedNavExample.dart';
+import 'package:flutter_bloc/flutter_bloc.dart'; // Ensure Bloc is imported for AuthCubit
+import 'package:google_fonts/google_fonts.dart'; // For Lexend font
+import 'package:thesavage/core/app_theme.dart';
+import 'package:thesavage/features/auth1/presentation/bloc/auth_cubit.dart';
+import 'package:thesavage/features/auth1/presentation/bloc/auth_state.dart';
+import 'package:thesavage/features/auth1/presentation/pages/register_screen.dart'; // Navigation
+import 'package:thesavage/screen/person.dart';
+
+import '../../../../widgets/AnimatedNavExample.dart'; // Navigation
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -16,284 +18,238 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  final TextEditingController _emailController = TextEditingController();
-  final TextEditingController _passwordController = TextEditingController();
-  bool _obscurePassword = true;
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
+  bool _isPasswordVisible = false;
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppTheme.backgroundColor,
-      body: BlocConsumer<AuthCubit, AuthState>(
-        // داخل BlocConsumer -> listener
-        listener: (context, state) async {
-          if (state is AuthSuccess) {
-            print("---------------- LOGIN DEBUG INFO ----------------");
-            SharedPreferences prefs = await SharedPreferences.getInstance();
-
-            // 1. فك تشفير التوكن لاستخراج الاسم الحقيقي
-            Map<String, dynamic> decodedToken = JwtDecoder.decode(state.token);
-
-            // استخراج الاسم من الحقل القياسي في JWT الخاص بك
-            String? nameFromToken = decodedToken['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name']
-                ?? decodedToken['unique_name']
-                ?? decodedToken['sub'];
+    return GestureDetector(
+      onTap: () => FocusScope.of(context).unfocus(),
+      child: Scaffold(
+        backgroundColor: AppTheme.backgroundColor,
+        body: Stack(
+          children: [
+            // Ambient Background
+            Positioned(
+              top: -100,
+              left: -100,
+              child: Container(
+                width: 300,
+                height: 300,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: AppTheme.primaryColor.withOpacity(0.2),
+                ),
+              ).blurred(blur: 80),
+            ),
+            Positioned(
+              bottom: -50,
+              right: -50,
+              child: Container(
+                width: 200,
+                height: 200,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Colors.blueAccent.withOpacity(0.1),
+                ),
+              ).blurred(blur: 60),
+            ),
             
-            // استخراج firstName و lastName من JWT
-            String? firstName = decodedToken['firstName'];
-            String? lastName = decodedToken['lastName'];
-
-            print("EXTRACTED NAME FROM TOKEN: $nameFromToken");
-            print("EXTRACTED FIRST NAME: $firstName");
-            print("EXTRACTED LAST NAME: $lastName");
-
-            // 2. حفظ التوكن والمعلومات الأساسية
-            await prefs.setString("token", state.token);
-            await prefs.setString("userEmail", state.user.email);
-
-            // ✅ حفظ الاسم: استخدم firstName + lastName إذا موجودان (Google Sign-In)، وإلا استخدم المنطق القديم
-            String nameToSave;
-            if (firstName != null && firstName.isNotEmpty && lastName != null && lastName.isNotEmpty) {
-              // Google Sign-In - استخدم الاسم الكامل
-              nameToSave = "${firstName} ${lastName}".trim();
-            } else {
-              // تسجيل دخول عادي - استخدم المنطق القديم
-              nameToSave = (nameFromToken != null && nameFromToken.isNotEmpty)
-                  ? nameFromToken
-                  : (state.user.userName.isNotEmpty ? state.user.userName : "User");
-            }
-
-            await prefs.setString("userName", nameToSave);
-            
-            // حفظ firstName و lastName
-            await prefs.setString("firstName", firstName ?? state.user.firstName ?? "");
-            await prefs.setString("lastName", lastName ?? state.user.lastName ?? "");
-
-            // 3. استخراج الدور (Role)
-            final String realRole = decodedToken['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'] ??
-                decodedToken['role'] ?? "Member";
-
-            await prefs.setString("userRole", realRole);
-            print("FINAL SAVED NAME: $nameToSave");
-            print("--------------------------------------------------");
-
-            if (mounted) {
-              Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(builder: (context) => const AnimatedNavExample()),
-              );
-            }
-          } else if (state is AuthFailure) {
-            print("DEBUG: Login Error -> ${state.error}");
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text('Login Failed: ${state.error}'),
-                backgroundColor: AppTheme.errorColor,
-              ),
-            );
-          }
-        },
-        builder: (context, state) {
-          return SingleChildScrollView(
-            child: Column(
-              children: [
-                _buildHeaderSection(),
-                Padding(
-                  padding: const EdgeInsets.all(AppTheme.spacingLG),
-                  child: Column(
-                    children: [
-                      const SizedBox(height: 20),
-                      _buildCustomTextField(
-                        controller: _emailController,
-                        label: 'Email',
-                        icon: Icons.email_outlined,
-                        keyboardType: TextInputType.emailAddress,
-                      ),
-                      const SizedBox(height: 20),
-                      _buildCustomTextField(
-                        controller: _passwordController,
-                        label: 'Password',
-                        icon: Icons.lock_outline,
-                        isPassword: true,
-                        obscure: _obscurePassword,
-                        onToggle: () => setState(() => _obscurePassword = !_obscurePassword),
-                      ),
-                      const SizedBox(height: 32),
-                      state is AuthLoading
-                          ? const CircularProgressIndicator(color: AppTheme.primaryColor)
-                          : SizedBox(
-                        width: double.infinity,
-                        child: ElevatedButton(
-                          onPressed: () {
-                            context.read<AuthCubit>().login(
-                              _emailController.text.trim(),
-                              _passwordController.text,
-                            );
-                          },
-                          style: AppTheme.primaryButtonStyle,
-                          child: const Text(
-                            'LOGIN',
-                            style: TextStyle(letterSpacing: 1.5, fontWeight: FontWeight.bold),
+            // Content
+            SafeArea(
+              child: Center(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.symmetric(horizontal: 24),
+                  child: BlocConsumer<AuthCubit, AuthState>(
+                    listener: (context, state) {
+                      if (state is AuthSuccess) {
+                        Navigator.pushReplacement(
+                          context,
+                          MaterialPageRoute(builder: (context) => const AnimatedNavExample()),
+                        );
+                      } else if (state is AuthFailure) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(state.error),
+                            backgroundColor: AppTheme.errorColor,
                           ),
-                        ),
-                      ),
-                      const SizedBox(height: 20),
-                      Row(
+                        );
+                      }
+                    },
+                    builder: (context, state) {
+                      if (state is AuthLoading) {
+                        return const Center(child: CircularProgressIndicator(color: AppTheme.primaryColor));
+                      }
+                      
+                      return Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Expanded(child: Divider(color: Colors.grey.shade400)),
-                          const Padding(
-                            padding: EdgeInsets.symmetric(horizontal: 10),
-                            child: Text("OR", style: TextStyle(color: Colors.grey)),
+                          // Logo / Icon
+                          Container(
+                            padding: const EdgeInsets.all(16),
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: Colors.white.withOpacity(0.05),
+                              border: Border.all(color: Colors.white.withOpacity(0.1)),
+                            ),
+                            child: const Icon(Icons.bolt, size: 48, color: AppTheme.primaryColor),
                           ),
-                          Expanded(child: Divider(color: Colors.grey.shade400)),
+                          const SizedBox(height: 24),
+                          Text(
+                            "Welcome Back",
+                            style: AppTheme.heading1.copyWith(fontSize: 32),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            "Sign in to continue your journey",
+                            style: AppTheme.bodyMedium,
+                          ),
+                          const SizedBox(height: 48),
+
+                          // Inputs
+                          _buildAuthField(
+                            controller: _emailController,
+                            hint: "Email Address",
+                            icon: Icons.email_outlined,
+                            keyboardType: TextInputType.emailAddress,
+                          ),
+                          const SizedBox(height: 16),
+                          _buildAuthField(
+                            controller: _passwordController,
+                            hint: "Password",
+                            icon: Icons.lock_outline,
+                            obscure: !_isPasswordVisible,
+                            suffixIcon: IconButton(
+                              icon: Icon(
+                                _isPasswordVisible ? Icons.visibility : Icons.visibility_off,
+                                color: Colors.grey,
+                              ),
+                              onPressed: () => setState(() => _isPasswordVisible = !_isPasswordVisible),
+                            ),
+                          ),
+                          
+                          const SizedBox(height: 12),
+                          Align(
+                            alignment: Alignment.centerRight,
+                            child: TextButton(
+                              onPressed: () {}, // Forgot Password Logic
+                              child: const Text("Forgot Password?", style: TextStyle(color: Colors.grey)),
+                            ),
+                          ),
+                          const SizedBox(height: 24),
+                          
+                          // Login Button
+                          SizedBox(
+                            width: double.infinity,
+                            height: 56,
+                            child: ElevatedButton(
+                              onPressed: () {
+                                context.read<AuthCubit>().login(
+                                  _emailController.text.trim(),
+                                  _passwordController.text.trim(),
+                                );
+                              },
+                              style: AppTheme.primaryButtonStyle,
+                              child: const Text("Sign In", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                            ),
+                          ),
+                          
+                          const SizedBox(height: 24),
+                          Row(
+                            children: const [
+                              Expanded(child: Divider(color: Colors.white12)),
+                              Padding(
+                                padding: EdgeInsets.symmetric(horizontal: 16),
+                                child: Text("OR", style: TextStyle(color: Colors.grey)),
+                              ),
+                              Expanded(child: Divider(color: Colors.white12)),
+                            ],
+                          ),
+                          const SizedBox(height: 24),
+                          
+                          // Google Sign In
+                          SizedBox(
+                            width: double.infinity,
+                            height: 56,
+                            child: OutlinedButton.icon(
+                              onPressed: () {
+                                context.read<AuthCubit>().googleSignIn();
+                              },
+                              icon: const Icon(Icons.g_mobiledata, size: 28), // Or custom asset
+                              label: const Text("Continue with Google"),
+                              style: OutlinedButton.styleFrom(
+                                foregroundColor: Colors.white,
+                                side: BorderSide(color: Colors.white.withOpacity(0.2)),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                              ),
+                            ),
+                          ),
+                          
+                          const SizedBox(height: 32),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              const Text("Don't have an account? ", style: TextStyle(color: Colors.grey)),
+                              GestureDetector(
+                                onTap: () {
+                                  Navigator.push(context, MaterialPageRoute(builder: (context) => const RegisterScreen()));
+                                },
+                                child: const Text("Sign Up", style: TextStyle(color: AppTheme.primaryColor, fontWeight: FontWeight.bold)),
+                              ),
+                            ],
+                          )
                         ],
-                      ),
-                      const SizedBox(height: 20),
-                      SizedBox(
-                        width: double.infinity,
-                        child: OutlinedButton.icon(
-                          onPressed: () {
-                            context.read<AuthCubit>().googleSignIn();
-                          },
-                          icon: const Icon(Icons.login, color: Colors.blue), // Placeholder for Google Icon
-                          label: const Text(
-                            'Sign in with Google',
-                            style: TextStyle(
-                                letterSpacing: 1.0, 
-                                fontWeight: FontWeight.bold,
-                                color: AppTheme.textPrimary
-                            ),
-                          ),
-                          style: OutlinedButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(vertical: 15),
-                            side: const BorderSide(color: Colors.grey),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
-                            ),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 24),
-                      _buildFooterSection(),
-                    ],
+                      );
+                    },
                   ),
                 ),
-              ],
-            ),
-          );
-        },
-      ),
-    );
-  }
-
-  Widget _buildHeaderSection() {
-    return Container(
-      width: double.infinity,
-      height: MediaQuery.of(context).size.height * 0.35,
-      decoration: BoxDecoration(
-        gradient: AppTheme.primaryGradient,
-        borderRadius: const BorderRadius.only(
-          bottomLeft: Radius.circular(AppTheme.borderRadiusXLarge),
-          bottomRight: Radius.circular(AppTheme.borderRadiusXLarge),
+              ),
+            )
+          ],
         ),
-        boxShadow: AppTheme.elevatedShadow,
-      ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const SizedBox(height: 40),
-          Container(
-            padding: const EdgeInsets.all(15),
-            decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.1),
-              shape: BoxShape.circle,
-              border: Border.all(color: Colors.white24, width: 2),
-            ),
-            child: const Icon(Icons.fitness_center_rounded, size: 60, color: Colors.white),
-          ),
-          const SizedBox(height: 20),
-          const Text(
-            'MAA3 MANAGEMENT',
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 24,
-              fontWeight: FontWeight.w900,
-              letterSpacing: 2,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Train Like a Pro',
-            style: TextStyle(
-              color: Colors.white.withOpacity(0.7),
-              fontSize: 14,
-              letterSpacing: 1.2,
-            ),
-          ),
-        ],
       ),
     );
   }
 
-  Widget _buildCustomTextField({
+  Widget _buildAuthField({
     required TextEditingController controller,
-    required String label,
+    required String hint,
     required IconData icon,
-    bool isPassword = false,
     bool obscure = false,
-    VoidCallback? onToggle,
-    TextInputType? keyboardType,
+    TextInputType keyboardType = TextInputType.text,
+    Widget? suffixIcon,
   }) {
     return Container(
-      decoration: AppTheme.cardDecoration(),
+      decoration: BoxDecoration(
+        color: const Color(0xFF1A3224), // Dark Surface
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.white.withOpacity(0.05)),
+      ),
       child: TextField(
         controller: controller,
         obscureText: obscure,
         keyboardType: keyboardType,
-        style: AppTheme.bodyLarge,
+        style: const TextStyle(color: Colors.white), 
         decoration: InputDecoration(
-          labelText: label,
-          labelStyle: AppTheme.bodySmall,
-          prefixIcon: Icon(icon, color: AppTheme.primaryColor),
-          suffixIcon: isPassword
-              ? IconButton(
-            icon: Icon(obscure ? Icons.visibility_off : Icons.visibility, color: AppTheme.textLight),
-            onPressed: onToggle,
-          )
-              : null,
+          prefixIcon: Icon(icon, color: Colors.grey),
+          suffixIcon: suffixIcon,
+          hintText: hint,
+          hintStyle: TextStyle(color: Colors.grey.withOpacity(0.5)),
           border: InputBorder.none,
-          contentPadding: const EdgeInsets.symmetric(vertical: 18, horizontal: 16),
+          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
         ),
       ),
     );
   }
+}
 
-  Widget _buildFooterSection() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        const Text("Don't have an account? ", style: AppTheme.bodyMedium),
-        GestureDetector(
-          onTap: () {
-            Navigator.push(context, MaterialPageRoute(builder: (context) => const RegisterScreen()));
-          },
-          child: const Text(
-            "Register Now",
-            style: TextStyle(
-              color: AppTheme.primaryColor,
-              fontWeight: FontWeight.bold,
-              decoration: TextDecoration.underline,
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  @override
-  void dispose() {
-    _emailController.dispose();
-    _passwordController.dispose();
-    super.dispose();
+// Improved Blur extension
+extension WidgetModifier on Widget {
+  Widget blurred({double blur = 20}) {
+     return ImageFiltered(
+       imageFilter: ImageFilter.blur(sigmaX: blur, sigmaY: blur),
+       child: this,
+     );
   }
 }

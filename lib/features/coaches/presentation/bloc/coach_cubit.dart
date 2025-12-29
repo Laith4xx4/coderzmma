@@ -1,11 +1,11 @@
 import 'package:bloc/bloc.dart';
-import 'package:maa3/features/coaches/data/models/create_coach_model.dart';
-import 'package:maa3/features/coaches/data/models/update_coach_model.dart';
-import 'package:maa3/features/coaches/domain/use_cases/create_coach.dart';
-import 'package:maa3/features/coaches/domain/use_cases/delete_coach.dart';
-import 'package:maa3/features/coaches/domain/use_cases/get_all_coaches.dart';
-import 'package:maa3/features/coaches/domain/use_cases/update_coach.dart';
-import 'package:maa3/features/coaches/presentation/bloc/coach_state.dart';
+import 'package:thesavage/features/coaches/data/models/create_coach_model.dart';
+import 'package:thesavage/features/coaches/data/models/update_coach_model.dart';
+import 'package:thesavage/features/coaches/domain/use_cases/create_coach.dart';
+import 'package:thesavage/features/coaches/domain/use_cases/delete_coach.dart';
+import 'package:thesavage/features/coaches/domain/use_cases/get_all_coaches.dart';
+import 'package:thesavage/features/coaches/domain/use_cases/update_coach.dart';
+import 'package:thesavage/features/coaches/presentation/bloc/coach_state.dart';
 
 class CoachCubit extends Cubit<CoachState> {
   final GetAllCoaches getAllCoaches;

@@ -1,11 +1,11 @@
 import 'package:bloc/bloc.dart';
-import 'package:maa3/features/progress/data/models/create_member_progress_model.dart';
-import 'package:maa3/features/progress/data/models/update_member_progress_model.dart';
-import 'package:maa3/features/progress/domain/use_cases/create_progress.dart';
-import 'package:maa3/features/progress/domain/use_cases/delete_progress.dart';
-import 'package:maa3/features/progress/domain/use_cases/get_all_progress.dart';
-import 'package:maa3/features/progress/domain/use_cases/update_progress.dart';
-import 'package:maa3/features/progress/presentation/bloc/progress_state.dart';
+import 'package:thesavage/features/progress/data/models/create_member_progress_model.dart';
+import 'package:thesavage/features/progress/data/models/update_member_progress_model.dart';
+import 'package:thesavage/features/progress/domain/use_cases/create_progress.dart';
+import 'package:thesavage/features/progress/domain/use_cases/delete_progress.dart';
+import 'package:thesavage/features/progress/domain/use_cases/get_all_progress.dart';
+import 'package:thesavage/features/progress/domain/use_cases/update_progress.dart';
+import 'package:thesavage/features/progress/presentation/bloc/progress_state.dart';
 
 class ProgressCubit extends Cubit<ProgressState> {
   final GetAllProgress getAllProgress;

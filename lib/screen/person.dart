@@ -1,21 +1,23 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:maa3/core/app_theme.dart';
-import 'package:maa3/features/auth1/presentation/bloc/auth_cubit.dart';
-import 'package:maa3/features/auth1/presentation/bloc/auth_state.dart';
-import 'package:maa3/features/auth1/presentation/pages/login_screen.dart';
-import 'package:maa3/widgets/ShimmerEffect.dart';
+import 'package:thesavage/core/app_theme.dart';
+import 'package:thesavage/features/auth1/presentation/bloc/auth_cubit.dart';
+import 'package:thesavage/features/auth1/presentation/bloc/auth_state.dart';
+import 'package:thesavage/features/auth1/presentation/pages/login_screen.dart';
+import 'package:thesavage/features/users/presentation/pages/user_management_page.dart';
+import 'package:thesavage/widgets/ShimmerEffect.dart';
 
 // استيراد الصفحات
-import 'package:maa3/features/memberpro/presentation/pages/member_list_page.dart';
-import 'package:maa3/features/bookings/presentation/pages/booking_list_page.dart';
-import 'package:maa3/features/attendance/presentation/pages/attendance_list_page.dart';
-import 'package:maa3/features/progress/presentation/pages/progress_list_page.dart';
-import 'package:maa3/features/coaches/presentation/pages/coach_list_page.dart';
-import 'package:maa3/features/sessions/presentation/pages/session_list_page.dart';
-import 'package:maa3/features/feedbacks/presentation/pages/feedback_list_page.dart';
-import 'package:maa3/features/classtypes/presentation/pages/class_type_list_page.dart';
+import 'package:thesavage/features/memberpro/presentation/pages/member_list_page.dart';
+import 'package:thesavage/features/bookings/presentation/pages/booking_list_page.dart';
+import 'package:thesavage/features/attendance/presentation/pages/attendance_list_page.dart';
+import 'package:thesavage/features/progress/presentation/pages/progress_list_page.dart';
+import 'package:thesavage/features/coaches/presentation/pages/coach_list_page.dart';
+import 'package:thesavage/features/sessions/presentation/pages/session_list_page.dart';
+import 'package:thesavage/features/feedbacks/presentation/pages/feedback_list_page.dart';
+import 'package:thesavage/features/classtypes/presentation/pages/class_type_list_page.dart';
+import 'package:thesavage/features/users/presentation/pages/edit_profile_page.dart';
 
 class Person extends StatefulWidget {
   const Person({super.key});
@@ -125,6 +127,11 @@ class _PersonState extends State<Person> with AutomaticKeepAliveClientMixin {
                   const SizedBox(height: 32),
                   const _SectionHeader(title: 'ACCOUNT SETTINGS'),
                   const SizedBox(height: 16),
+                  _ActionCard(
+                    icon: Icons.person_outline_rounded,
+                    title: 'Edit Profile',
+                    onTap: () => _navigateTo(const EditProfilePage()),
+                  ),
                   _LogoutButton(onLogout: _logout),
                 ]),
               ),
@@ -293,6 +300,11 @@ class _QuickActions extends StatelessWidget {
     return Column(
       children: [
         if (isAdmin) ...[
+          _ActionCard(
+            icon: Icons.people_alt_rounded,
+            title: 'Manage User',
+            onTap: () => onNavigate(const UserManagementPage()),
+          ),
           _ActionCard(
             icon: Icons.people_alt_rounded,
             title: 'Manage Members',

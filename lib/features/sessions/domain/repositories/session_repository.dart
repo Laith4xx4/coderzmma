@@ -1,6 +1,6 @@
-import 'package:maa3/features/sessions/domain/entities/session_entity.dart';
-import 'package:maa3/features/sessions/data/models/create_session_model.dart';
-import 'package:maa3/features/sessions/data/models/update_session_model.dart';
+import 'package:thesavage/features/sessions/domain/entities/session_entity.dart';
+import 'package:thesavage/features/sessions/data/models/create_session_model.dart';
+import 'package:thesavage/features/sessions/data/models/update_session_model.dart';
 
 abstract class SessionRepository {
   Future<List<SessionEntity>> getAllSessions();

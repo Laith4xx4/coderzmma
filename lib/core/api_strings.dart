@@ -3,14 +3,14 @@ import 'package:flutter/foundation.dart';
 
 class ApiStrings {
   static String get baseUrl {
-    // إذا كنا نعمل على الويب، نستخدم النطاق المحلي العادي
+
     if (kIsWeb) return 'http://localhost:5086/api';
     
-    // إذا كنا على الأندرويد، نتحقق مما إذا كنا على المحاكي
+
     if (Platform.isAndroid) {
-      // نستخدم IP الجهاز المضيف (الكمبيوتر) للعمل على الهاتف الحقيقي
+
       // 192.168.100.66 هو عنوان جهازك الحالي
-      return 'http://192.168.100.66:5086/api';
+      return 'http://192.168.0.49:5086/api';
     }
     
     // للـ iOS أو غيره

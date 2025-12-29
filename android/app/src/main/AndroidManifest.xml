@@ -4,9 +4,9 @@
     <uses-permission android:name="android.permission.INTERNET"/>
 
     <application
-        android:label="maa3"
+        android:label="The Savage"
         android:name="${applicationName}"
-        android:icon="@mipmap/ic_launcher"
+        android:icon="@mipmap/launcher_icon"
         android:usesCleartextTraffic="true">
 
         <activity
@@ -29,13 +29,15 @@
             </intent-filter>
         </activity>
 
-        <!-- لا تحذف هذا -->
+        <!-- Don't delete this -->
         <meta-data
             android:name="flutterEmbedding"
             android:value="2" />
 
-        <!-- AdMob App ID (Test ID: ca-app-pub-3940256099942544~3347511713) -->
-        <meta-data
+        <!-- AdMob App ID -->
+        <!-- TODO: Replace with your actual AdMob App ID before publishing -->
+        <!-- Get your App ID from https://apps.admob.com -->
+       <meta-data
             android:name="com.google.android.gms.ads.APPLICATION_ID"
             android:value="ca-app-pub-3940256099942544~3347511713"/>
     </application>

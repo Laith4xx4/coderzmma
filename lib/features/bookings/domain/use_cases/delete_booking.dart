@@ -1,4 +1,4 @@
-import 'package:maa3/features/bookings/domain/repositories/booking_repository.dart';
+import 'package:thesavage/features/bookings/domain/repositories/booking_repository.dart';
 
 class DeleteBooking {
   final BookingRepository repository;

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:maa3/features/classtypes/data/models/create_class_type_model.dart';
-import 'package:maa3/features/classtypes/presentation/bloc/class_type_cubit.dart';
+import 'package:thesavage/features/classtypes/data/models/create_class_type_model.dart';
+import 'package:thesavage/features/classtypes/presentation/bloc/class_type_cubit.dart';
 
 class Showaddclasstypedialog extends StatelessWidget {
   Showaddclasstypedialog({super.key});

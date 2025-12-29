@@ -1,4 +1,4 @@
-import 'package:maa3/features/coaches/domain/repositories/coach_repository.dart';
+import 'package:thesavage/features/coaches/domain/repositories/coach_repository.dart';
 
 class DeleteCoach {
   final CoachRepository repository;
