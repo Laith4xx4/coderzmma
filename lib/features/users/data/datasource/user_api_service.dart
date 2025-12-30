@@ -86,4 +86,27 @@ class UserApiService {
       throw Exception('Failed to delete user');
     }
   }
+
+  /// Get users by role
+  Future<List<UserEntity>> getUsersByRole(String roleName) async {
+    final token = await _getToken();
+    if (token == null) throw Exception('No authentication token found');
+
+    final response = await http.get(
+      Uri.parse('$baseUrl/Users/role/$roleName'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+    );
+
+    if (response.statusCode == 200) {
+      final List<dynamic> data = json.decode(response.body);
+      return data.map((json) => UserEntity.fromJson(json)).toList();
+    } else if (response.statusCode == 404) {
+      return []; // No users with this role
+    } else {
+      throw Exception('Failed to load users by role: ${response.statusCode}');
+    }
+  }
 }

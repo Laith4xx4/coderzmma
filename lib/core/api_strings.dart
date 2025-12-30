@@ -10,7 +10,7 @@ class ApiStrings {
     if (Platform.isAndroid) {
 
       // 192.168.100.66 هو عنوان جهازك الحالي
-      return 'http://192.168.0.49:5086/api';
+      return 'http://192.168.100.66:5086/api';
     }
     
     // للـ iOS أو غيره
@@ -20,6 +20,10 @@ class ApiStrings {
   // Auth
   static const String loginEndpoint = '/Auth/login';
   static const String registerEndpoint = '/Auth/register';
+
+  // Users
+  static const String usersEndpoint = '/Users';
+  static String usersByRoleEndpoint(String role) => '/Users/role/$role';
 
   // Members
   static const String memberProfilesEndpoint = '/MemberProfiles';

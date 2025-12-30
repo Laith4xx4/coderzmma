@@ -1,4 +1,6 @@
 import 'dart:convert';
+import 'dart:async';
+import 'dart:io';
 import 'package:http/http.dart' as http;
 import 'package:thesavage/core/api_strings.dart';
 
@@ -7,11 +9,12 @@ class AuthApiService {
 
   // =================== Login ===================
   Future<Map<String, dynamic>> login(String email, String password) async {
-    final response = await http.post(
-      Uri.parse('$_baseUrl${ApiStrings.loginEndpoint}'),
-      headers: {'Content-Type': 'application/json'},
-      body: json.encode({'email': email, 'password': password}),
-    );
+    try {
+      final response = await http.post(
+        Uri.parse('$_baseUrl${ApiStrings.loginEndpoint}'),
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({'email': email, 'password': password}),
+      ).timeout(const Duration(seconds: 15));
 
     if (response.statusCode == 200) {
       final data = json.decode(response.body);
@@ -30,16 +33,22 @@ class AuthApiService {
     } else {
       final errorData = json.decode(response.body);
       throw Exception(errorData['message']?.toString() ?? 'Failed to login');
+      }
+    } catch (e) {
+      if (e is TimeoutException) throw Exception('Connection timeout. Please check your internet or server IP.');
+      if (e is SocketException) throw Exception('No internet connection or server is unreachable.');
+      rethrow;
     }
   }
 
   // =================== Google Login ===================
   Future<Map<String, dynamic>> googleLogin(String idToken) async {
-    final response = await http.post(
-      Uri.parse('$_baseUrl${ApiStrings.baseUrl.endsWith('/') ? '' : '/'}Auth/google-login'), // Correct endpoint construction
-      headers: {'Content-Type': 'application/json'},
-      body: json.encode({'idToken': idToken}),
-    );
+    try {
+      final response = await http.post(
+        Uri.parse('$_baseUrl${ApiStrings.baseUrl.endsWith('/') ? '' : '/'}Auth/google-login'), // Correct endpoint construction
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({'idToken': idToken}),
+      ).timeout(const Duration(seconds: 15));
 
     if (response.statusCode == 200) {
       final data = json.decode(response.body);
@@ -58,6 +67,11 @@ class AuthApiService {
     } else {
       final errorData = json.decode(response.body);
       throw Exception(errorData['message']?.toString() ?? 'Failed to login with Google');
+      }
+    } catch (e) {
+      if (e is TimeoutException) throw Exception('Connection timeout. Please check your internet or server IP.');
+      if (e is SocketException) throw Exception('No internet connection or server is unreachable.');
+      rethrow;
     }
   }
 
@@ -83,11 +97,12 @@ class AuthApiService {
       if (dateOfBirth != null) 'dateOfBirth': dateOfBirth,
     };
 
-    final response = await http.post(
-      Uri.parse('$_baseUrl${ApiStrings.registerEndpoint}'),
-      headers: {'Content-Type': 'application/json'},
-      body: json.encode(body),
-    );
+    try {
+      final response = await http.post(
+        Uri.parse('$_baseUrl${ApiStrings.registerEndpoint}'),
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode(body),
+      ).timeout(const Duration(seconds: 15));
 
     if (response.statusCode == 200) {
       final data = json.decode(response.body);
@@ -106,6 +121,11 @@ class AuthApiService {
     } else {
       final errorData = json.decode(response.body);
       throw Exception(errorData['message']?.toString() ?? 'Failed to register');
+      }
+    } catch (e) {
+      if (e is TimeoutException) throw Exception('Connection timeout. Please check your internet or server IP.');
+      if (e is SocketException) throw Exception('No internet connection or server is unreachable.');
+      rethrow;
     }
   }
 
@@ -116,36 +136,42 @@ class AuthApiService {
     // Note: Assuming '/Users/me' is standard, if not defined in ApiStrings, we append it directly
     final uri = Uri.parse('$_baseUrl/Users/me');
 
-    final response = await http.get(
-      uri,
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer $token', // التوكن ضروري جداً هنا
-      },
-    );
+    try {
+      final response = await http.get(
+        uri,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token', // التوكن ضروري جداً هنا
+        },
+      ).timeout(const Duration(seconds: 15));
 
-    if (response.statusCode == 200) {
-      final data = json.decode(response.body);
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
 
-      // التعامل مع احتمالية اختلاف حالة الأحرف (PascalCase vs camelCase) من الباك اند
-      return {
-        'id': data['id']?.toString() ?? data['Id']?.toString() ?? '',
-        'email': data['email']?.toString() ?? data['Email']?.toString() ?? '',
+        // التعامل مع احتمالية اختلاف حالة الأحرف (PascalCase vs camelCase) من الباك اند
+        return {
+          'id': data['id']?.toString() ?? data['Id']?.toString() ?? '',
+          'email': data['email']?.toString() ?? data['Email']?.toString() ?? '',
 
-        // جلب الـ Role
-        'role': data['role']?.toString() ?? data['Role']?.toString() ?? 'Member',
+          // جلب الـ Role
+          'role': data['role']?.toString() ?? data['Role']?.toString() ?? 'Member',
 
-        'token': token, // نعيد التوكن المرسل للحفاظ على بنية الموديل
+          'token': token, // نعيد التوكن المرسل للحفاظ على بنية الموديل
 
-        // جلب البيانات الشخصية
-        'firstName': data['firstName']?.toString() ?? data['FirstName']?.toString(),
-        'lastName': data['lastName']?.toString() ?? data['LastName']?.toString(),
-        'phoneNumber': data['phoneNumber']?.toString() ?? data['PhoneNumber']?.toString(),
-        'dateOfBirth': data['dateOfBirth']?.toString() ?? data['DateOfBirth']?.toString(),
-      };
-    } else {
-      print('Failed to load user profile. Status: ${response.statusCode}, Body: ${response.body}');
-      throw Exception('Failed to load user profile');
+          // جلب البيانات الشخصية
+          'firstName': data['firstName']?.toString() ?? data['FirstName']?.toString(),
+          'lastName': data['lastName']?.toString() ?? data['LastName']?.toString(),
+          'phoneNumber': data['phoneNumber']?.toString() ?? data['PhoneNumber']?.toString(),
+          'dateOfBirth': data['dateOfBirth']?.toString() ?? data['DateOfBirth']?.toString(),
+        };
+      } else {
+        print('Failed to load user profile. Status: ${response.statusCode}, Body: ${response.body}');
+        throw Exception('Failed to load user profile');
+      }
+    } catch (e) {
+      if (e is TimeoutException) throw Exception('Connection timeout. Please check your internet or server IP.');
+      if (e is SocketException) throw Exception('No internet connection or server is unreachable.');
+      rethrow;
     }
   }
 }

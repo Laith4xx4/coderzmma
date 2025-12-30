@@ -8,6 +8,8 @@ import 'package:thesavage/features/coaches/data/models/update_coach_model.dart';
 import 'package:thesavage/features/coaches/presentation/bloc/coach_cubit.dart';
 import 'package:thesavage/features/coaches/presentation/bloc/coach_state.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:thesavage/features/users/data/datasource/user_api_service.dart';
+import 'package:thesavage/features/users/domain/entities/user_entity.dart';
 
 class CoachListPage extends StatefulWidget {
   const CoachListPage({super.key});
@@ -17,10 +19,41 @@ class CoachListPage extends StatefulWidget {
 }
 
 class _CoachListPageState extends State<CoachListPage> {
+  final UserApiService _userApiService = UserApiService();
+  List<UserEntity> _usersWithCoachRole = [];
+  bool _isLoadingUsers = false;
+  String? _userLoadError;
+
   @override
   void initState() {
     super.initState();
     context.read<CoachCubit>().loadCoaches();
+    _loadUsersWithCoachRole();
+  }
+
+  Future<void> _loadUsersWithCoachRole() async {
+    setState(() {
+      _isLoadingUsers = true;
+      _userLoadError = null;
+    });
+
+    try {
+      final users = await _userApiService.getUsersByRole('Coach');
+      setState(() {
+        _usersWithCoachRole = users;
+        _isLoadingUsers = false;
+      });
+    } catch (e) {
+      setState(() {
+        _userLoadError = e.toString();
+        _isLoadingUsers = false;
+      });
+    }
+  }
+
+  Future<void> _refreshAll() async {
+    context.read<CoachCubit>().loadCoaches();
+    await _loadUsersWithCoachRole();
   }
 
   @override
@@ -65,37 +98,92 @@ class _CoachListPageState extends State<CoachListPage> {
           }
 
           if (state is CoachesLoaded) {
-            if (state.coaches.isEmpty) {
-              return Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: const [
-                    Icon(Icons.person_outline, size: 64, color: Colors.grey),
-                    SizedBox(height: 16),
-                    Text(
-                      'No coaches found.',
-                      style: TextStyle(fontSize: 18, color: Colors.grey),
-                    ),
-                  ],
-                ),
-              );
-            }
+
 
             return RefreshIndicator(
-              onRefresh: () async {
-                context.read<CoachCubit>().loadCoaches();
-              },
-              child: ListView.builder(
+              onRefresh: _refreshAll,
+              child: ListView(
                 padding: const EdgeInsets.all(16),
-                itemCount: state.coaches.length,
-                itemBuilder: (context, index) {
-                  final coach = state.coaches[index];
-                  return CoachCard(
-                    coach: coach,
-                    onEdit: () => _showEditCoachDialog(context, coach),
-                    onDelete: () => _showDeleteDialog(context, coach.id),
-                  );
-                },
+                children: [
+                  // Users with Coach role section
+                  if (_isLoadingUsers)
+                     const Center(child: Padding(padding: EdgeInsets.all(8), child: CircularProgressIndicator())),
+
+                  if (_userLoadError != null)
+                    Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: Text('Error syncing users: $_userLoadError', style: const TextStyle(color: Colors.red, fontSize: 12)),
+                    ),
+
+                  if (_usersWithCoachRole.isNotEmpty) ...[
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
+                      child: Row(
+                        children: [
+                          Icon(Icons.person_add_alt_1_rounded, color: AppTheme.infoColor, size: 20),
+                          const SizedBox(width: 8),
+                          Text(
+                            'Users with Coach Role',
+                            style: AppTheme.heading3.copyWith(fontSize: 16),
+                          ),
+                          const Spacer(),
+                          IconButton(
+                            icon: Icon(Icons.refresh_rounded, color: AppTheme.primaryColor),
+                            onPressed: _loadUsersWithCoachRole,
+                            tooltip: 'Refresh coaches',
+                            splashRadius: 20,
+                          ),
+                        ],
+                      ),
+                    ),
+                    ..._usersWithCoachRole.map((user) => UserCoachCard(
+                      user: user,
+                      onTap: () => _showAddCoachDialog(context, prefilledUserName: user.userName),
+                    )),
+                    const SizedBox(height: 24),
+                    const Divider(),
+                    const SizedBox(height: 12),
+                  ],
+                  
+                  // Coach profiles section
+                  if (state.coaches.isNotEmpty) ...[
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
+                      child: Row(
+                        children: [
+                          Icon(Icons.sports_gymnastics_rounded, color: AppTheme.successColor, size: 20),
+                          const SizedBox(width: 8),
+                          Text(
+                            'Coach Profiles',
+                            style: AppTheme.heading3.copyWith(fontSize: 16),
+                          ),
+                        ],
+                      ),
+                    ),
+                    ...state.coaches.map((coach) => CoachCard(
+                      coach: coach,
+                      onEdit: () => _showEditCoachDialog(context, coach),
+                      onDelete: () => _showDeleteDialog(context, coach.id),
+                    )),
+                  ],
+                  
+                  // Show message if both are empty
+                  if (state.coaches.isEmpty && _usersWithCoachRole.isEmpty) ...[
+                    const SizedBox(height: 100),
+                    Center(
+                      child: Column(
+                        children: const [
+                          Icon(Icons.person_outline, size: 64, color: Colors.grey),
+                          SizedBox(height: 16),
+                          Text(
+                            'No coaches found.',
+                            style: TextStyle(fontSize: 18, color: Colors.grey),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ],
               ),
             );
           }
@@ -128,17 +216,19 @@ class _CoachListPageState extends State<CoachListPage> {
     );
   }
 
-  void _showAddCoachDialog(BuildContext context) async {
+  void _showAddCoachDialog(BuildContext context, {String? prefilledUserName}) async {
     final formKey = GlobalKey<FormState>();
-    final userNameController = TextEditingController();
+    final userNameController = TextEditingController(text: prefilledUserName ?? '');
     final bioController = TextEditingController();
     final specializationController = TextEditingController();
     final certificationsController = TextEditingController();
 
-    // الحصول على البريد الإلكتروني الحالي كـ default UserName (إن وُجد)
-    final prefs = await SharedPreferences.getInstance();
-    final currentUserEmail = prefs.getString("userEmail") ?? "";
-    userNameController.text = currentUserEmail;
+    // If no prefilled name, try to use current user email
+    if (prefilledUserName == null) {
+      final prefs = await SharedPreferences.getInstance();
+      final currentUserEmail = prefs.getString("userEmail") ?? "";
+      userNameController.text = currentUserEmail;
+    }
 
     showDialog(
       context: context,
@@ -153,8 +243,11 @@ class _CoachListPageState extends State<CoachListPage> {
                 children: [
                   TextFormField(
                     controller: userNameController,
-                    decoration:
-                    const InputDecoration(labelText: 'User Name *'),
+                    readOnly: prefilledUserName != null, // Lock if prefilled
+                    decoration: InputDecoration(
+                      labelText: 'User Name *',
+                      filled: prefilledUserName != null,
+                    ),
                     validator: (value) => value == null || value.isEmpty
                         ? 'Required'
                         : null,
@@ -163,7 +256,7 @@ class _CoachListPageState extends State<CoachListPage> {
                   TextFormField(
                     controller: specializationController,
                     decoration:
-                    const InputDecoration(labelText: 'Specialization *'),
+                        const InputDecoration(labelText: 'Specialization *'),
                     validator: (value) => value == null || value.isEmpty
                         ? 'Required'
                         : null,
@@ -198,16 +291,16 @@ class _CoachListPageState extends State<CoachListPage> {
               onPressed: () {
                 if (formKey.currentState!.validate()) {
                   context.read<CoachCubit>().createCoachAction(
-                    CreateCoachModel(
-                      userName: userNameController.text,
-                      bio: bioController.text,
-                      specialization: specializationController.text,
-                      certifications:
-                      certificationsController.text.isEmpty
-                          ? null
-                          : certificationsController.text,
-                    ),
-                  );
+                        CreateCoachModel(
+                          userName: userNameController.text,
+                          bio: bioController.text,
+                          specialization: specializationController.text,
+                          certifications:
+                              certificationsController.text.isEmpty
+                                  ? null
+                                  : certificationsController.text,
+                        ),
+                      );
                   Navigator.pop(context);
                 }
               },
@@ -222,11 +315,11 @@ class _CoachListPageState extends State<CoachListPage> {
   void _showEditCoachDialog(BuildContext context, CoachEntity coach) {
     final formKey = GlobalKey<FormState>();
     final bioController =
-    TextEditingController(text: coach.bio ?? ''); // ← null-safe
+        TextEditingController(text: coach.bio ?? ''); // ← null-safe
     final specializationController =
-    TextEditingController(text: coach.specialization ?? '');
+        TextEditingController(text: coach.specialization ?? '');
     final certificationsController =
-    TextEditingController(text: coach.certifications ?? '');
+        TextEditingController(text: coach.certifications ?? '');
 
     showDialog(
       context: context,
@@ -242,7 +335,7 @@ class _CoachListPageState extends State<CoachListPage> {
                   TextFormField(
                     controller: specializationController,
                     decoration:
-                    const InputDecoration(labelText: 'Specialization *'),
+                        const InputDecoration(labelText: 'Specialization *'),
                     validator: (value) => value == null || value.isEmpty
                         ? 'Required'
                         : null,
@@ -277,16 +370,16 @@ class _CoachListPageState extends State<CoachListPage> {
               onPressed: () {
                 if (formKey.currentState!.validate()) {
                   context.read<CoachCubit>().updateCoachAction(
-                    coach.id,
-                    UpdateCoachModel(
-                      bio: bioController.text,
-                      specialization: specializationController.text,
-                      certifications:
-                      certificationsController.text.isEmpty
-                          ? null
-                          : certificationsController.text,
-                    ),
-                  );
+                        coach.id,
+                        UpdateCoachModel(
+                          bio: bioController.text,
+                          specialization: specializationController.text,
+                          certifications:
+                              certificationsController.text.isEmpty
+                                  ? null
+                                  : certificationsController.text,
+                        ),
+                      );
                   Navigator.pop(context);
                 }
               },
@@ -303,8 +396,7 @@ class _CoachListPageState extends State<CoachListPage> {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Delete Coach'),
-        content:
-        const Text('Are you sure you want to delete this coach?'),
+        content: const Text('Are you sure you want to delete this coach?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
@@ -488,6 +580,170 @@ class CoachCard extends StatelessWidget {
           ],
         ],
       ),
+    );
+  }
+}
+
+class UserCoachCard extends StatelessWidget {
+  final UserEntity user;
+  final VoidCallback onTap; // Added callback
+
+  const UserCoachCard({
+    super.key,
+    required this.user,
+    required this.onTap, // Required now
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return ModernCard(
+      child: InkWell( // Wrap in InkWell for tap interaction
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
+        child: Padding( // Add padding inside InkWell for ripple effect
+          padding: const EdgeInsets.all(8.0), // Optional: Adjust padding if needed
+          child: Column(
+             crossAxisAlignment: CrossAxisAlignment.start,
+             children: [
+               Row(
+                 children: [
+                   Container(
+                     padding: const EdgeInsets.all(12),
+
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      AppTheme.infoColor.withOpacity(0.8),
+                      AppTheme.infoColor,
+                    ],
+                  ),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.person_rounded,
+                  color: Colors.white,
+                  size: 24,
+                ),
+              ),
+              const SizedBox(width: AppTheme.spacingMD),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      user.displayName,
+                      style: AppTheme.heading3.copyWith(fontSize: 18),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      '@${user.userName}',
+                      style: AppTheme.bodySmall.copyWith(
+                        color: AppTheme.textLight,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 6,
+                ),
+                decoration: BoxDecoration(
+                  color: AppTheme.infoColor.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: AppTheme.infoColor.withOpacity(0.3),
+                  ),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.verified_user_rounded,
+                      size: 16,
+                      color: AppTheme.infoColor,
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      'Coach Role',
+                      style: AppTheme.bodySmall.copyWith(
+                        color: AppTheme.infoColor,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: AppTheme.spacingMD),
+          Container(
+            padding: const EdgeInsets.all(AppTheme.spacingMD),
+            decoration: BoxDecoration(
+              color: AppTheme.backgroundColor,
+              borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
+            ),
+            child: Row(
+              children: [
+                Icon(
+                  Icons.info_outline_rounded,
+                  size: 18,
+                  color: AppTheme.infoColor,
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'User account with Coach role. Create a coach profile for detailed information.',
+                    style: AppTheme.bodySmall.copyWith(
+                      color: AppTheme.textSecondary,
+                      fontStyle: FontStyle.italic,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: AppTheme.spacingMD),
+          Container(
+            padding: const EdgeInsets.all(AppTheme.spacingMD),
+            decoration: BoxDecoration(
+              color: AppTheme.backgroundColor,
+              borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildInfoRow(Icons.email_outlined, user.email),
+                if (user.phoneNumber != null && user.phoneNumber!.isNotEmpty) ...[
+                  const SizedBox(height: 8),
+                  _buildInfoRow(Icons.phone_outlined, user.phoneNumber!),
+                ],
+              ],
+            ),
+          ),
+        ],
+      ),
+    )
+      )
+    );
+  }
+
+  Widget _buildInfoRow(IconData icon, String text) {
+    return Row(
+      children: [
+        Icon(icon, size: 16, color: AppTheme.textLight),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Text(
+            text,
+            style: AppTheme.bodyMedium,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
+      ],
     );
   }
 }

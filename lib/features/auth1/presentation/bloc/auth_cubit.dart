@@ -1,6 +1,8 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:google_sign_in/google_sign_in.dart'; // Added
-import 'package:firebase_auth/firebase_auth.dart' as firebase_auth; // Added
+import 'package:google_sign_in/google_sign_in.dart';
+import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
+import 'package:flutter/services.dart';
+import 'package:flutter/foundation.dart'; // For kIsWeb
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:thesavage/features/auth1/presentation/bloc/auth_state.dart';
 import 'package:thesavage/features/auth1/domain/use_cases/login_user.dart';
@@ -26,9 +28,11 @@ class AuthCubit extends Cubit<AuthState> {
       emit(AuthLoading());
       
       // Step 1: Sign in with Google
+      // Platform-specific configuration: Web uses clientId, Android/iOS use serverClientId
       final GoogleSignIn googleSignIn = GoogleSignIn(
         scopes: ['email'],
-        serverClientId: '713764696012-lpi2c1dsig6t6mgsj9leiup44ff2gec6.apps.googleusercontent.com',
+        clientId: kIsWeb ? '713764696012-lpi2c1dsig6t6mgsj9leiup44ff2gec6.apps.googleusercontent.com' : null,
+        serverClientId: !kIsWeb ? '713764696012-lpi2c1dsig6t6mgsj9leiup44ff2gec6.apps.googleusercontent.com' : null,
       );
       
       final GoogleSignInAccount? googleUser = await googleSignIn.signIn();
@@ -75,7 +79,15 @@ class AuthCubit extends Cubit<AuthState> {
 
     } catch (e) {
       print('Google Sign-In Error: $e');
-      emit(AuthFailure(error: 'Google Sign-In Failed: $e'));
+      String errorMessage = 'Google Sign-In Failed: $e';
+      
+      if (e is PlatformException) {
+        if (e.code == 'sign_in_failed') {
+          errorMessage = 'Google Sign-In Failed (ApiException 10). This usually means the SHA-1 or SHA-256 fingerprint is missing in Firebase, or the Support Email is not set.';
+        }
+      }
+      
+      emit(AuthFailure(error: errorMessage));
     }
   }
 

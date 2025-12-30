@@ -9,16 +9,16 @@
       "client_info": {
         "mobilesdk_app_id": "1:713764696012:android:7fa13a2365134a0c8ab769",
         "android_client_info": {
-          "package_name": "com.thesavage.mma"
+          "package_name": "com.example.maa3"
         }
       },
       "oauth_client": [
         {
-          "client_id": "713764696012-mns5cidhf4l9vkmsk8kcjpu0usncenpd.apps.googleusercontent.com",
+          "client_id": "713764696012-dencq0vrhvl154nhq97a37hkudb57m3h.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {
-            "package_name": "com.thesavage.mma",
-            "certificate_hash": "0eac6e767e81d8d00df5ee552da29f8fc9e9e1af"
+            "package_name": "com.example.maa3",
+            "certificate_hash": "2fbe8cc236d0ae1cc2c00a1b531692ebb44a25d3"
           }
         },
         {
@@ -42,7 +42,51 @@
               "client_id": "713764696012-70hdomm61pqfaegjrn9q2rlfu6k9hnm1.apps.googleusercontent.com",
               "client_type": 2,
               "ios_info": {
-                "bundle_id": "com.thesavage.mma"
+                "bundle_id": "com.example.maa3"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:713764696012:android:4b491d6f24a08b9b8ab769",
+        "android_client_info": {
+          "package_name": "com.thesavage.mma"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "713764696012-jclh0gvbt8pm5gbucjg4tdr54tjsng3v.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.thesavage.mma",
+            "certificate_hash": "2fbe8cc236d0ae1cc2c00a1b531692ebb44a25d3"
+          }
+        },
+        {
+          "client_id": "713764696012-lpi2c1dsig6t6mgsj9leiup44ff2gec6.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB8BNfPlwDDJ3GdOeSbEVfh3Vw8W2gkPz0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "713764696012-lpi2c1dsig6t6mgsj9leiup44ff2gec6.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "713764696012-70hdomm61pqfaegjrn9q2rlfu6k9hnm1.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.maa3"
               }
             }
           ]
