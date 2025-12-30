@@ -1,16 +1,20 @@
+import 'package:thesavage/features/bookings/domain/entities/booking_entity.dart';
+import 'package:thesavage/features/bookings/data/models/booking_model.dart';
+
 class SessionEntity {
   final int id;
   final int coachId;
-  final String coachName;       // جديد
+  final String coachName;
   final int classTypeId;
-  final String classTypeName;   // جديد
+  final String classTypeName;
   final DateTime startTime;
   final DateTime endTime;
   final int capacity;
   final String? description;
-  final String sessionName;     // جديد
-  final int bookingsCount;      // جديد
-  final int attendanceCount;    // جديد
+  final String sessionName;
+  final int bookingsCount;
+  final int attendanceCount;
+  final List<BookingEntity> bookings; // جديد
 
   SessionEntity({
     required this.id,
@@ -25,6 +29,7 @@ class SessionEntity {
     required this.sessionName,
     required this.bookingsCount,
     required this.attendanceCount,
+    this.bookings = const [], // جديد
   });
 
   factory SessionEntity.fromJson(Map<String, dynamic> json) {
@@ -41,6 +46,19 @@ class SessionEntity {
       sessionName: json['sessionName'] as String? ?? '',
       bookingsCount: json['bookingsCount'] as int? ?? 0,
       attendanceCount: json['attendanceCount'] as int? ?? 0,
+      bookings: (json['bookings'] as List?)
+              ?.map((e) => BookingModel.fromJson(e)) // Use Model.fromJson then map to Entity if needed, or if BookingModel extends Entity
+              .map((m) => BookingEntity(
+                    id: m.id,
+                    sessionId: m.sessionId,
+                    sessionName: m.sessionName,
+                    memberId: m.memberId,
+                    memberName: m.memberName,
+                    bookingTime: m.bookingTime,
+                    status: m.status,
+                  ))
+              .toList() ??
+          [],
     );
   }
 }

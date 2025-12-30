@@ -165,6 +165,8 @@ class AuthCubit extends Cubit<AuthState> {
       await prefs.setString("lastName", user.lastName ?? "");
       await prefs.setString("userRole", user.role);
       await prefs.setString("userEmail", user.email);
+      await prefs.setString("userId", user.id); // Fix: Ensure userId is always saved
+      print("AuthCubit: Profile fetched & userId saved: ${user.id}");
 
       emit(AuthSuccess(token: token, user: user));
     } catch (e) {

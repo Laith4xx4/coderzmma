@@ -1,12 +1,11 @@
 import 'dart:ui';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart'; // Ensure Bloc is imported for AuthCubit
-import 'package:google_fonts/google_fonts.dart'; // For Lexend font
 import 'package:thesavage/core/app_theme.dart';
 import 'package:thesavage/features/auth1/presentation/bloc/auth_cubit.dart';
 import 'package:thesavage/features/auth1/presentation/bloc/auth_state.dart';
 import 'package:thesavage/features/auth1/presentation/pages/register_screen.dart'; // Navigation
-import 'package:thesavage/screen/person.dart';
 
 import '../../../../widgets/AnimatedNavExample.dart'; // Navigation
 
@@ -167,21 +166,47 @@ class _LoginScreenState extends State<LoginScreen> {
                             ],
                           ),
                           const SizedBox(height: 24),
-                          
-                          // Google Sign In
-                          SizedBox(
-                            width: double.infinity,
-                            height: 56,
-                            child: OutlinedButton.icon(
-                              onPressed: () {
-                                context.read<AuthCubit>().googleSignIn();
-                              },
-                              icon: const Icon(Icons.g_mobiledata, size: 28), // Or custom asset
-                              label: const Text("Continue with Google"),
-                              style: OutlinedButton.styleFrom(
-                                foregroundColor: Colors.white,
-                                side: BorderSide(color: Colors.white.withOpacity(0.2)),
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+
+                          // Premium Google Sign In
+                          GestureDetector(
+                            onTap: () {
+                              context.read<AuthCubit>().googleSignIn();
+                            },
+                            child: Container(
+                              width: double.infinity,
+                              height: 56,
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(16),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.white.withOpacity(0.1),
+                                    blurRadius: 10,
+                                    offset: const Offset(0, 4),
+                                  ),
+                                ],
+                              ),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Image.network(
+                                    'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c1/Google_\"G\"_logo.svg/1200px-Google_\"G\"_logo.svg.png',
+                                    height: 24,
+                                    errorBuilder: (context, error,
+                                        stackTrace) => const Icon(
+                                        Icons.g_mobiledata, color: Colors.black,
+                                        size: 28),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  const Text(
+                                    "Continue with Google",
+                                    style: TextStyle(
+                                      color: Colors.black,
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
                           ),
@@ -222,7 +247,7 @@ class _LoginScreenState extends State<LoginScreen> {
   }) {
     return Container(
       decoration: BoxDecoration(
-        color: const Color(0xFF1A3224), // Dark Surface
+        color: const Color(0xFF141414), // Dark Surface
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: Colors.white.withOpacity(0.05)),
       ),

@@ -53,27 +53,28 @@ class _ClassTypeListPageState extends State<ClassTypeListPage>
 
   @override
   Widget build(BuildContext context) {
-    super.build(context); // ✅ مطلوب لـ AutomaticKeepAliveClientMixin
+    super.build(context);
 
     return Scaffold(
       backgroundColor: AppTheme.backgroundColor,
       appBar: _buildAppBar(),
       floatingActionButton: canManage ? _buildFAB() : null,
       body: BlocConsumer<ClassTypeCubit, ClassTypeState>(
-        // ✅ التحكم في متى يتم الاستماع
+
         listenWhen: (previous, current) => current is ClassTypeError,
         listener: (context, state) {
           if (state is ClassTypeError) {
             _showErrorSnackBar(state.message);
           }
         },
-        // ✅ التحكم في متى يتم إعادة البناء
+
         buildWhen: (previous, current) {
           return current is ClassTypeLoading ||
               current is ClassTypesLoaded ||
               current is ClassTypeInitial;
         },
         builder: (context, state) {
+
           if (state is ClassTypeInitial || state is ClassTypeLoading) {
             return _ShimmerList(screenWidth: _screenWidth);
           }
@@ -92,6 +93,7 @@ class _ClassTypeListPageState extends State<ClassTypeListPage>
           return _ErrorState(
             onRetry: () => context.read<ClassTypeCubit>().loadClassTypes(),
           );
+
         },
       ),
     );
@@ -99,8 +101,8 @@ class _ClassTypeListPageState extends State<ClassTypeListPage>
 
   PreferredSizeWidget _buildAppBar() {
     return AppBar(
-      backgroundColor: AppTheme.primaryColor,
-      iconTheme: const IconThemeData(color: Colors.white),
+      backgroundColor: AppTheme.primaryDark,
+      iconTheme: const IconThemeData(color: Colors.black),
       centerTitle: true,
       title: const Text(
         'CLASS TYPES',
@@ -125,7 +127,7 @@ class _ClassTypeListPageState extends State<ClassTypeListPage>
         onPressed: () => _showAddClassTypeDialog(context),
         backgroundColor: AppTheme.primaryColor,
         elevation: 2, // ✅ تقليل الظل
-        child: const Icon(Icons.add_rounded, color: Colors.white, size: 30),
+        child: const Icon(Icons.add_rounded, color: Colors.black, size: 30),
       ),
     );
   }
@@ -570,4 +572,43 @@ class _DeleteDialog extends StatelessWidget {
       ],
     );
   }
+  Widget _buildHeader(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.all(16.0),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          IconButton(
+              icon: const Icon(Icons.arrow_back, color: Colors.white),
+              onPressed: () => Navigator.pop(context) // Check if can pop?
+          ), // Placeholder width if no back button needed at root
+          Text("Class", style: AppTheme.heading3),
+          CircleAvatar(
+            backgroundColor: Colors.white.withOpacity(0.1),
+            child: const Icon(Icons.calendar_month, color: Colors.white),
+          )
+        ],
+      ),
+    );
+  }
+
+}
+Widget _buildHeader(BuildContext context) {
+  return Padding(
+    padding: const EdgeInsets.all(16.0),
+    child: Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        IconButton(
+            icon: const Icon(Icons.arrow_back, color: Colors.white),
+            onPressed: () => Navigator.pop(context) // Check if can pop?
+        ), // Placeholder width if no back button needed at root
+        Text("CLasses", style: AppTheme.heading3),
+        CircleAvatar(
+          backgroundColor: Colors.white.withOpacity(0.1),
+          child: const Icon(Icons.calendar_month, color: Colors.white),
+        )
+      ],
+    ),
+  );
 }

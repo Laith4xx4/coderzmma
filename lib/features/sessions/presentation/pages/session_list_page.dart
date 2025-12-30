@@ -24,6 +24,8 @@ import 'package:thesavage/features/sessions/data/models/update_session_model.dar
 
 import '../../../bookings/presentation/bloc/booking_cubit.dart';
 import '../../../bookings/presentation/bloc/booking_state.dart';
+import 'package:thesavage/features/auth1/presentation/bloc/auth_cubit.dart';
+import 'package:thesavage/features/auth1/presentation/bloc/auth_state.dart';
 
 class SessionListPage extends StatefulWidget {
   final int? classTypeId;
@@ -64,7 +66,10 @@ class _SessionListPageState extends State<SessionListPage> {
 
   Future<void> _checkUser() async {
     final prefs = await SharedPreferences.getInstance();
-    _userId = prefs.getString("userId");
+    final savedUserId = prefs.getString("userId");
+    if (savedUserId != null && savedUserId.isNotEmpty) {
+      _userId = savedUserId;
+    }
     _canManage = await RoleHelper.canManageSessions();
     _isMember = await RoleHelper.isMember();
     setState(() {});
@@ -74,42 +79,79 @@ class _SessionListPageState extends State<SessionListPage> {
   Widget build(BuildContext context) {
     // Resolve Member ID
     final memberState = context.watch<MemberCubit>().state;
-    if (_currentMemberId == null && _userId != null && memberState is MembersLoaded) {
-       try { _currentMemberId = memberState.members.firstWhere((m) => m.userId == _userId).id; } catch (_) {}
+    if (_currentMemberId == null && _userId != null && _userId!.isNotEmpty && memberState is MembersLoaded) {
+       try { 
+         _currentMemberId = memberState.members.firstWhere((m) => m.userId == _userId).id; 
+         print("SessionListPage: Resolved Member ID $_currentMemberId for User ID $_userId");
+       } catch (e) {
+         print("SessionListPage: Could not find member for User ID $_userId. Error: $e");
+       }
     }
 
-    return Scaffold(
-      backgroundColor: AppTheme.backgroundColor,
-      floatingActionButton: _canManage ? FloatingActionButton(
-        onPressed: () => _showSessionDialog(),
-        backgroundColor: AppTheme.primaryColor,
-        child: const Icon(Icons.add, color: Colors.black),
-      ) : null,
-      body: SafeArea(
-        child: Stack(
-          children: [
-            Column(
-              children: [
-                _buildHeader(),
-                Expanded(
-                  child: Column(
-                    children: [
-                      _buildDateStrip(),
-                      _buildFilters(),
-                      const SizedBox(height: 16),
-                      _buildSessionsList(),
-                    ],
+    return MultiBlocListener(
+      listeners: [
+        BlocListener<BookingCubit, BookingState>(
+          listener: (context, state) {
+            if (state is BookingOperationSuccess) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text("Booking Successful!"), backgroundColor: Colors.green),
+              );
+              setState(() {
+                _selectedSessionIdForBooking = null;
+                _selectedSessionEntity = null;
+              });
+              context.read<SessionCubit>().loadSessions(); 
+            } else if (state is BookingError) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text("Error: ${state.message}"), backgroundColor: Colors.red),
+              );
+            }
+          },
+        ),
+        BlocListener<AuthCubit, AuthState>(
+          listener: (context, state) {
+            if (state is AuthSuccess) {
+              print("SessionListPage: AuthSuccess received, updating userId: ${state.user.id}");
+              setState(() {
+                _userId = state.user.id;
+              });
+            }
+          },
+        ),
+      ],
+      child: Scaffold(
+        backgroundColor: AppTheme.backgroundColor,
+        floatingActionButton: _canManage ? FloatingActionButton(
+          onPressed: () => _showSessionDialog(),
+          backgroundColor: AppTheme.primaryColor,
+          child: const Icon(Icons.add, color: Colors.black),
+        ) : null,
+        body: SafeArea(
+          child: Stack(
+            children: [
+              Column(
+                children: [
+                  _buildHeader(),
+                  Expanded(
+                    child: Column(
+                      children: [
+                        _buildDateStrip(),
+                        _buildFilters(),
+                        const SizedBox(height: 16),
+                        _buildSessionsList(),
+                      ],
+                    ),
                   ),
-                ),
-              ],
-            ),
-            // Floating Bottom Bar for Booking Confirmation
-            if (_selectedSessionIdForBooking != null && _selectedSessionEntity != null && _isMember)
-              Positioned(
-                bottom: 0, left: 0, right: 0,
-                child: _buildBookingBottomBar(),
+                ],
               ),
-          ],
+              // Floating Bottom Bar for Booking Confirmation
+              if (_selectedSessionIdForBooking != null && _selectedSessionEntity != null && _isMember)
+                Positioned(
+                  bottom: 0, left: 0, right: 0,
+                  child: _buildBookingBottomBar(),
+                ),
+            ],
+          ),
         ),
       ),
     );
@@ -526,20 +568,21 @@ class _SessionListPageState extends State<SessionListPage> {
         return;
      }
 
+     print("SessionListPage: Booking Session ID: $_selectedSessionIdForBooking");
+     print("SessionListPage: Current User ID: $_userId");
+     print("SessionListPage: Resolved Member ID: $_currentMemberId");
+
      final bookingData = CreateBookingModel(
        memberId: _currentMemberId!,
        sessionId: _selectedSessionIdForBooking!,
        bookingTime: _selectedSessionEntity!.startTime,
-       status: 1
+       status: 0 // 0 = Confirmed, 1 = Cancelled
      );
 
-     context.read<BookingCubit>().createBooking(bookingData);
-     ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Booking Request Sent!"), backgroundColor: AppTheme.primaryColor));
-     setState(() {
-        _selectedSessionIdForBooking = null;
-        _selectedSessionEntity = null;
-        context.read<SessionCubit>().loadSessions(); 
-     });
+     // Fix: Call createBookingAction, don't call UseCase directly
+     context.read<BookingCubit>().createBookingAction(bookingData);
+     // Note: Removed setState and immediate SnackBar here. 
+     // The BlocListener in build() or _buildBookingBottomBar() should handle success/failure feedback.
   }
 
   // RBAC Management Methods

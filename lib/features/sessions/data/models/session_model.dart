@@ -1,16 +1,19 @@
+import 'package:thesavage/features/bookings/data/models/booking_model.dart';
+
 class SessionModel {
   final int id;
   final int coachId;
-  final String coachName;       // جديد
+  final String coachName;
   final int classTypeId;
-  final String classTypeName;   // جديد
+  final String classTypeName;
   final DateTime startTime;
   final DateTime endTime;
   final int capacity;
   final String? description;
-  final String sessionName;     // جديد
-  final int bookingsCount;      // جديد
-  final int attendanceCount;    // جديد
+  final String sessionName;
+  final int bookingsCount;
+  final int attendanceCount;
+  final List<BookingModel> bookings; // جديد
 
   SessionModel({
     required this.id,
@@ -25,6 +28,7 @@ class SessionModel {
     required this.sessionName,
     required this.bookingsCount,
     required this.attendanceCount,
+    this.bookings = const [], // جديد
   });
 
   factory SessionModel.fromJson(Map<String, dynamic> json) {
@@ -41,6 +45,10 @@ class SessionModel {
       sessionName: json['sessionName'] as String? ?? '',
       bookingsCount: json['bookingsCount'] as int? ?? 0,
       attendanceCount: json['attendanceCount'] as int? ?? 0,
+      bookings: (json['bookings'] as List?)
+              ?.map((e) => BookingModel.fromJson(e))
+              .toList() ??
+          [],
     );
   }
 }

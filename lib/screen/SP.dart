@@ -5,6 +5,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:thesavage/features/auth1/presentation/pages/onboarding_page.dart'; // Import Onboarding
 import 'package:thesavage/screen/person.dart';
 
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:thesavage/features/auth1/presentation/bloc/auth_cubit.dart';
 import '../widgets/AnimatedNavExample.dart'; // Import Home/Person
 
 class Sp extends StatefulWidget {
@@ -71,8 +73,10 @@ class _SpState extends State<Sp> with SingleTickerProviderStateMixin {
             context, _createRoute(const OnboardingPage()));
       } else if (hasToken) {
         // Logged in user -> Home
+        // Refresh profile to ensure fresh data (like userId)
+        context.read<AuthCubit>().fetchUserProfile();
+        
         Navigator.pushReplacement(
-
             context, _createRoute(const AnimatedNavExample()));
       } else {
         // Returning user, no session -> Login
@@ -88,7 +92,6 @@ class _SpState extends State<Sp> with SingleTickerProviderStateMixin {
       }
     }
   }
-
   Route _createRoute(Widget page) {
     return PageRouteBuilder(
       pageBuilder: (context, animation, secondaryAnimation) => page,

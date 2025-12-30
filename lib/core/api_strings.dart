@@ -4,17 +4,17 @@ import 'package:flutter/foundation.dart';
 class ApiStrings {
   static String get baseUrl {
 
-    if (kIsWeb) return 'http://localhost:5086/api';
+    if (kIsWeb) return 'http://thesavage.runasp.net/api';
     
 
     if (Platform.isAndroid) {
 
       // 192.168.100.66 هو عنوان جهازك الحالي
-      return 'http://192.168.100.66:5086/api';
+      return 'http://thesavage.runasp.net/api';
     }
     
     // للـ iOS أو غيره
-    return 'http://localhost:5086/api';
+    return 'http://thesavage.runasp.net/api';
   }
 
   // Auth

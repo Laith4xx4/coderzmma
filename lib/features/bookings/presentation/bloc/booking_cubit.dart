@@ -24,19 +24,26 @@ class BookingCubit extends Cubit<BookingState> {
     emit(BookingLoading());
     try {
       final bookings = await getAllBookings.call();
+      print("BookingCubit: Loaded ${bookings.length} bookings");
+      for (var b in bookings) {
+         print(" - ID: ${b.id}, Member: ${b.memberName} (${b.memberId}), Status: ${b.status}");
+      }
       emit(BookingsLoaded(bookings));
     } catch (e) {
+      print("BookingCubit Load Error: $e");
       emit(BookingError(e.toString()));
     }
   }
 
   Future<void> createBookingAction(CreateBookingModel data) async {
+    print("BookingCubit: Creating booking for Member: ${data.memberId}, Session: ${data.sessionId}, Status: ${data.status}");
     emit(BookingLoading());
     try {
       await createBooking.call(data);
       emit(BookingOperationSuccess('Booking created successfully'));
       await loadBookings();
     } catch (e) {
+      print("BookingCubit Error: $e");
       emit(BookingError(e.toString()));
     }
   }

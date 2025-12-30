@@ -13,10 +13,9 @@ import 'package:thesavage/features/sessions/presentation/bloc/session_state.dart
 import 'package:thesavage/features/memberpro/presentation/bloc/member_cubit.dart';
 import 'package:thesavage/features/memberpro/presentation/bloc/member_state.dart';
 import 'package:thesavage/features/memberpro/domain/entities/member_profile_entity.dart';
-
-import '../../../bookings/presentation/bloc/booking_cubit.dart';
-import '../../../bookings/presentation/bloc/booking_state.dart';
-import '../../../bookings/domain/entities/booking_entity.dart';
+import 'package:thesavage/features/bookings/domain/entities/booking_entity.dart';
+import 'package:thesavage/features/bookings/presentation/bloc/booking_cubit.dart';
+import 'package:thesavage/features/bookings/presentation/bloc/booking_state.dart';
 import '../../data/models/update_attendance_model.dart';
 
 class AttendanceListPage extends StatefulWidget {
@@ -216,14 +215,33 @@ class _AttendanceListPageState extends State<AttendanceListPage> {
            return const Center(child: CircularProgressIndicator(color: AppTheme.primaryColor));
         }
  
-        if (attendanceState is AttendancesLoaded && bookingState is BookingsLoaded) {
-           List<MemberProfileEntity> allMembers = [];
-           if (memberState is MembersLoaded) {
-             allMembers = memberState.members;
+        if (attendanceState is AttendancesLoaded && memberState is MembersLoaded) {
+           List<MemberProfileEntity> allMembers = memberState.members;
+           
+           // Resolve selected session to get bookings directly
+           List<BookingEntity> sessionBookings = [];
+           final sessionState = context.read<SessionCubit>().state;
+           if (sessionState is SessionsLoaded) {
+             try {
+                final session = sessionState.sessions.firstWhere((s) => s.id == _selectedSessionId);
+                sessionBookings = session.bookings;
+                
+                // Fallback: If session bookings are empty but we have bookings in BookingCubit, use those
+                 if (sessionBookings.isEmpty && bookingState is BookingsLoaded) {
+                   print("AttendanceListPage: Session bookings empty, falling back to BookingCubit");
+                   sessionBookings = bookingState.bookings.where((b) => b.sessionId == _selectedSessionId).toList();
+                 }
+             } catch (_) {
+                // Fallback or session not found in list (shouldn't happen if selected)
+                if (bookingState is BookingsLoaded) {
+                   sessionBookings = bookingState.bookings.where((b) => b.sessionId == _selectedSessionId).toList();
+                }
+             }
+           } else if (bookingState is BookingsLoaded) {
+               // Fallback if SessionCubit not ready
+               sessionBookings = bookingState.bookings.where((b) => b.sessionId == _selectedSessionId).toList();
            }
 
-          // 1. Get filtered data for this session
-          final sessionBookings = bookingState.bookings.where((b) => b.sessionId == _selectedSessionId).toList();
           final sessionAttendances = attendanceState.attendances.where((a) => a.sessionId == _selectedSessionId).toList();
 
           // 2. Merge into a unique list of members to display
