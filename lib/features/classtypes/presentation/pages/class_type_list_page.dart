@@ -102,7 +102,7 @@ class _ClassTypeListPageState extends State<ClassTypeListPage>
   PreferredSizeWidget _buildAppBar() {
     return AppBar(
       backgroundColor: AppTheme.primaryDark,
-      iconTheme: const IconThemeData(color: Colors.black),
+      iconTheme: const IconThemeData(color: Colors.white),
       centerTitle: true,
       title: const Text(
         'CLASS TYPES',
@@ -572,43 +572,5 @@ class _DeleteDialog extends StatelessWidget {
       ],
     );
   }
-  Widget _buildHeader(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.all(16.0),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          IconButton(
-              icon: const Icon(Icons.arrow_back, color: Colors.white),
-              onPressed: () => Navigator.pop(context) // Check if can pop?
-          ), // Placeholder width if no back button needed at root
-          Text("Class", style: AppTheme.heading3),
-          CircleAvatar(
-            backgroundColor: Colors.white.withOpacity(0.1),
-            child: const Icon(Icons.calendar_month, color: Colors.white),
-          )
-        ],
-      ),
-    );
   }
 
-}
-Widget _buildHeader(BuildContext context) {
-  return Padding(
-    padding: const EdgeInsets.all(16.0),
-    child: Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        IconButton(
-            icon: const Icon(Icons.arrow_back, color: Colors.white),
-            onPressed: () => Navigator.pop(context) // Check if can pop?
-        ), // Placeholder width if no back button needed at root
-        Text("CLasses", style: AppTheme.heading3),
-        CircleAvatar(
-          backgroundColor: Colors.white.withOpacity(0.1),
-          child: const Icon(Icons.calendar_month, color: Colors.white),
-        )
-      ],
-    ),
-  );
-}

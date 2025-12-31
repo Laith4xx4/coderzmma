@@ -132,7 +132,7 @@ class _SpState extends State<Sp> with SingleTickerProviderStateMixin {
                     ),
                     const SizedBox(height: 30),
                     const Text(
-                      'MAA',
+                      'savage',
                       style: TextStyle(color: Colors.white, fontSize: 32, fontWeight: FontWeight.w900, letterSpacing: 8),
                     ),
                     const SizedBox(height: 50),

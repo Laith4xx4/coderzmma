@@ -84,7 +84,8 @@ class _MemberListPageState extends State<MemberListPage> {
     return Scaffold(
       backgroundColor: AppTheme.backgroundColor,
       appBar: AppBar(
-        backgroundColor: AppTheme.primaryColor,
+        centerTitle: true,
+        backgroundColor: AppTheme.primaryDark,
         iconTheme: const IconThemeData(color: Colors.white),
         title: const Text(
           'Club Members',

@@ -127,11 +127,11 @@ class _PersonState extends State<Person> with AutomaticKeepAliveClientMixin {
                   const SizedBox(height: 32),
                   const _SectionHeader(title: 'ACCOUNT SETTINGS'),
                   const SizedBox(height: 16),
-                  _ActionCard(
-                    icon: Icons.person_outline_rounded,
-                    title: 'Edit Profile',
-                    onTap: () => _navigateTo(const EditProfilePage()),
-                  ),
+                  // _ActionCard(
+                  //   icon: Icons.person_outline_rounded,
+                  //   title: 'Edit Profile',
+                  //   onTap: () => _navigateTo(const EditProfilePage()),
+                  // ),
                   _LogoutButton(onLogout: _logout),
                 ]),
               ),
@@ -190,28 +190,27 @@ class _ProfileHeader extends StatelessWidget {
       stretch: true,
       elevation: 0,
       automaticallyImplyLeading: false,
-      backgroundColor: AppTheme.primaryColor,
+      backgroundColor: AppTheme.backgroundColor,
       flexibleSpace: FlexibleSpaceBar(
         background: Container(
-          decoration: BoxDecoration(gradient: AppTheme.primaryGradient),
+          decoration: BoxDecoration(gradient: AppTheme.primaryGradiente),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               const SizedBox(height: 50),
               const _ProfileAvatar(),
-              const SizedBox(height: 16),
+              const SizedBox(height: 20),
               // ✅ عرض الاسم بخط عريض وواضح
-              // داخل كود _ProfileHeader
               Text(
                 displayName.trim().isEmpty ? "GUEST USER" : displayName.toUpperCase(),
                 style: const TextStyle(
                   color: Colors.white,
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  letterSpacing: 1.2,
+                  fontSize: 22,
+                  fontWeight: FontWeight.w900,
+                  letterSpacing: 2,
                 ),
               ),
-              const SizedBox(height: 10),
+              const SizedBox(height: 12),
               _RoleBadge(role: userRole),
             ],
           ),
@@ -229,14 +228,13 @@ class _ProfileAvatar extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(4),
       decoration: BoxDecoration(
-        border: Border.all(color: Colors.white24, width: 2),
+        border: Border.all(color: Colors.white.withOpacity(0.1), width: 2),
         shape: BoxShape.circle,
       ),
       child: CircleAvatar(
         radius: 55,
-        backgroundColor: AppTheme.primaryLight,
-        // ✅ صورة افتراضية فخمة في حال عدم وجود صورة شخصية
-        child: const Icon(Icons.person_rounded, color: Colors.white, size: 50),
+        backgroundColor: AppTheme.cardBackground,
+        child: const Icon(Icons.person_outline_rounded, color: Colors.white, size: 50),
       ),
     );
   }
@@ -251,16 +249,17 @@ class _RoleBadge extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 6),
       decoration: BoxDecoration(
-        color: AppTheme.infoColor.withOpacity(0.2),
+        color: Colors.white.withOpacity(0.1),
         borderRadius: BorderRadius.circular(30),
-        border: Border.all(color: AppTheme.infoColor.withOpacity(0.5)),
+        border: Border.all(color: Colors.white.withOpacity(0.1)),
       ),
       child: Text(
         role.toUpperCase(),
         style: const TextStyle(
-          color: AppTheme.infoColor,
-          fontSize: 12,
+          color: Colors.white,
+          fontSize: 10,
           fontWeight: FontWeight.w900,
+          letterSpacing: 1,
         ),
       ),
     );

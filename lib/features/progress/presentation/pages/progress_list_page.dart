@@ -120,17 +120,18 @@ class _ProgressListPageState extends State<ProgressListPage> {
       builder: (context) {
         final memberState = context.watch<MemberCubit>().state;
         final coachState = context.watch<CoachCubit>().state;
-        final progressState = context.watch<ProgressCubit>().state;
 
         final resolved = _resolveDomainIds(context, memberState: memberState, coachState: coachState);
 
         return Scaffold(
           backgroundColor: AppTheme.backgroundColor,
+          appBar: _buildAppBar(),
           floatingActionButton: _canAdd()
               ? FloatingActionButton(
                   onPressed: resolved ? () => _showAddProgressDialog(context) : null,
                   backgroundColor: AppTheme.primaryColor,
-                  child: const Icon(Icons.add, color: Colors.white),
+                  elevation: 2,
+                  child: const Icon(Icons.add_rounded, color: Colors.black, size: 30),
                 )
               : null,
           body: BlocConsumer<ProgressCubit, ProgressState>(
@@ -152,46 +153,29 @@ class _ProgressListPageState extends State<ProgressListPage> {
 
               if (state is ProgressLoaded) {
                 final filteredItems = _filterProgressByRole(state.items);
-                filteredItems.sort((a, b) => b.date.compareTo(a.date)); // Newest first
+                filteredItems.sort((a, b) => b.date.compareTo(a.date));
 
-                return CustomScrollView(
+                if (filteredItems.isEmpty) {
+                  return _buildEmptyState();
+                }
+
+                return ListView(
+                  padding: const EdgeInsets.all(AppTheme.spacingMD),
                   physics: const BouncingScrollPhysics(),
-                  slivers: [
-                    _buildSliverAppBar(),
+                  children: [
                     if (_isMember && filteredItems.isNotEmpty)
-                      SliverPadding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                        sliver: SliverToBoxAdapter(
-                          child: _buildProgressDashboard(filteredItems),
-                        ),
-                      ),
-                    if (filteredItems.isEmpty)
-                      SliverFillRemaining(
-                        hasScrollBody: false,
-                        child: _buildEmptyState(),
-                      )
-                    else
-                      SliverPadding(
-                        padding: const EdgeInsets.all(16),
-                        sliver: SliverList(
-                          delegate: SliverChildBuilderDelegate(
-                            (context, index) {
-                              final item = filteredItems[index];
-                              return Padding(
-                                padding: const EdgeInsets.only(bottom: 12),
-                                child: ProgressCard(
-                                  item: item,
-                                  onEdit: _canEdit() ? () => _showEditProgressDialog(context, item) : null,
-                                  onDelete: _canDelete() ? () => _showDeleteDialog(context, item.id) : null,
-                                  showChartToggle: _isAdmin || _isCoach,
-                                  allMemberProgress: state.items.where((i) => i.memberId == item.memberId).toList(),
-                                ),
-                              );
-                            },
-                            childCount: filteredItems.length,
+                      _buildProgressDashboard(filteredItems),
+                    ...filteredItems.map((item) => Padding(
+                          padding: const EdgeInsets.only(bottom: 12),
+                          child: ProgressCard(
+                            item: item,
+                            onEdit: _canEdit() ? () => _showEditProgressDialog(context, item) : null,
+                            onDelete: _canDelete() ? () => _showDeleteDialog(context, item.id) : null,
+                            showChartToggle: _isAdmin || _isCoach,
+                            allMemberProgress: state.items.where((i) => i.memberId == item.memberId).toList(),
                           ),
-                        ),
-                      ),
+                        )),
+                    const SizedBox(height: 100), // Space for FAB
                   ],
                 );
               }
@@ -204,54 +188,43 @@ class _ProgressListPageState extends State<ProgressListPage> {
     );
   }
 
-  Widget _buildSliverAppBar() {
-    return SliverAppBar(
-      expandedHeight: 120.0,
-      floating: false,
-      pinned: true,
-      stretch: true,
-      backgroundColor: AppTheme.primaryColor.withOpacity(0.8),
-      flexibleSpace: FlexibleSpaceBar(
-        centerTitle: false,
-        titlePadding: const EdgeInsets.only(left: 16, bottom: 16),
-        title: Text(
-          'Member Progress',
-          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18),
+  PreferredSizeWidget _buildAppBar() {
+    return AppBar(
+      backgroundColor: AppTheme.primaryDark,
+      iconTheme: const IconThemeData(color: Colors.white),
+      centerTitle: true,
+      title: const Text(
+        'MEMBER PROGRESS',
+        style: TextStyle(
+          color: Colors.white,
+          fontWeight: FontWeight.w900,
+          letterSpacing: 2,
+          fontSize: 18,
         ),
-        background: Stack(
-          fit: StackFit.expand,
-          children: [
-            Container(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [AppTheme.primaryColor, AppTheme.primaryColor.withBlue(150)],
-                ),
-              ),
-            ),
-            ClipRRect(
-              child: BackdropFilter(
-                filter: ImageFilter.blur(sigmaX: 5.0, sigmaY: 5.0),
-                child: Container(color: Colors.transparent),
-              ),
-            ),
-          ],
-        ),
+      ),
+      elevation: 0,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(bottom: Radius.circular(20)),
       ),
       actions: [
         Padding(
-          padding: const EdgeInsets.only(right: 16, top: 8, bottom: 8),
-          child: Container(
-            alignment: Alignment.center,
-            padding: const EdgeInsets.symmetric(horizontal: 12),
-            decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.2),
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: Text(
-              _currentUserRole,
-              style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold),
+          padding: const EdgeInsets.only(right: 16),
+          child: Center(
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Text(
+                _currentUserRole.toUpperCase(),
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 10,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 1,
+                ),
+              ),
             ),
           ),
         ),
@@ -629,7 +602,7 @@ class _ProgressListPageState extends State<ProgressListPage> {
                     backgroundColor: AppTheme.primaryColor,
                     padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                   ),
-                  child: const Text('Add Progress', style: TextStyle(color: Colors.white)),
+                  child: const Text('Add Progress', style: TextStyle(color: Colors.black)),
                 ),
               ],
             );
@@ -772,7 +745,7 @@ class _ProgressListPageState extends State<ProgressListPage> {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppTheme.primaryColor,
                   ),
-                  child: const Text('Update', style: TextStyle(color: Colors.white)),
+                  child: const Text('Update', style: TextStyle(color: Colors.black)),
                 ),
               ],
             );

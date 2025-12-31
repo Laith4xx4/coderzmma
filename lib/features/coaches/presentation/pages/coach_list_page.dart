@@ -61,7 +61,8 @@ class _CoachListPageState extends State<CoachListPage> {
     return Scaffold(
       backgroundColor: AppTheme.backgroundColor,
       appBar: AppBar(
-        backgroundColor: AppTheme.primaryColor,
+        centerTitle: true,
+        backgroundColor: AppTheme.primaryDark,
         iconTheme: const IconThemeData(color: Colors.white),
         title: const Text(
           'Coaches',
@@ -72,7 +73,7 @@ class _CoachListPageState extends State<CoachListPage> {
       floatingActionButton: FloatingActionButton(
         onPressed: () => _showAddCoachDialog(context),
         backgroundColor: AppTheme.primaryColor,
-        child: const Icon(Icons.add, color: Colors.white),
+        child: const Icon(Icons.add, color: Colors.black),
       ),
       body: BlocConsumer<CoachCubit, CoachState>(
         listener: (context, state) {
