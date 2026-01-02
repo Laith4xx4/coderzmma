@@ -11,8 +11,11 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:thesavage/features/users/data/datasource/user_api_service.dart';
 import 'package:thesavage/features/users/domain/entities/user_entity.dart';
 
+import '../../../../core/role_helper.dart';
+
 class CoachListPage extends StatefulWidget {
   const CoachListPage({super.key});
+
 
   @override
   State<CoachListPage> createState() => _CoachListPageState();
@@ -23,15 +26,27 @@ class _CoachListPageState extends State<CoachListPage> {
   List<UserEntity> _usersWithCoachRole = [];
   bool _isLoadingUsers = false;
   String? _userLoadError;
+  bool _canManage = false;
 
   @override
   void initState() {
     super.initState();
+    _checkPermissions();
     context.read<CoachCubit>().loadCoaches();
-    _loadUsersWithCoachRole();
+  }
+
+  Future<void> _checkPermissions() async {
+     final canManage = await RoleHelper.canManageCoaches();
+     setState(() {
+       _canManage = canManage;
+     });
+     if (canManage) {
+        _loadUsersWithCoachRole();
+     }
   }
 
   Future<void> _loadUsersWithCoachRole() async {
+    // ... existing code
     setState(() {
       _isLoadingUsers = true;
       _userLoadError = null;
@@ -44,16 +59,20 @@ class _CoachListPageState extends State<CoachListPage> {
         _isLoadingUsers = false;
       });
     } catch (e) {
-      setState(() {
-        _userLoadError = e.toString();
-        _isLoadingUsers = false;
-      });
+      if (mounted) {
+        setState(() {
+          _userLoadError = e.toString();
+          _isLoadingUsers = false;
+        });
+      }
     }
   }
 
   Future<void> _refreshAll() async {
     context.read<CoachCubit>().loadCoaches();
-    await _loadUsersWithCoachRole();
+    if (_canManage) {
+      await _loadUsersWithCoachRole();
+    }
   }
 
   @override
@@ -70,11 +89,11 @@ class _CoachListPageState extends State<CoachListPage> {
         ),
         elevation: 0,
       ),
-      floatingActionButton: FloatingActionButton(
+      floatingActionButton: _canManage ? FloatingActionButton(
         onPressed: () => _showAddCoachDialog(context),
         backgroundColor: AppTheme.primaryColor,
         child: const Icon(Icons.add, color: Colors.black),
-      ),
+      ) : null,
       body: BlocConsumer<CoachCubit, CoachState>(
         listener: (context, state) {
           if (state is CoachOperationSuccess) {
@@ -116,7 +135,7 @@ class _CoachListPageState extends State<CoachListPage> {
                       child: Text('Error syncing users: $_userLoadError', style: const TextStyle(color: Colors.red, fontSize: 12)),
                     ),
 
-                  if (_usersWithCoachRole.isNotEmpty) ...[
+                  if (_canManage && _usersWithCoachRole.isNotEmpty) ...[
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
                       child: Row(
@@ -163,8 +182,8 @@ class _CoachListPageState extends State<CoachListPage> {
                     ),
                     ...state.coaches.map((coach) => CoachCard(
                       coach: coach,
-                      onEdit: () => _showEditCoachDialog(context, coach),
-                      onDelete: () => _showDeleteDialog(context, coach.id),
+                      onEdit: _canManage ? () => _showEditCoachDialog(context, coach) : null,
+                      onDelete: _canManage ? () => _showDeleteDialog(context, coach.id) : null,
                     )),
                   ],
                   

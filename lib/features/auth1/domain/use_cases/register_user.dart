@@ -10,6 +10,7 @@ class RegisterUser {
     required String userName,
     required String email,
     required String password,
+    String role = 'Client', // Added
     String? firstName,
     String? lastName,
     String? phoneNumber,
@@ -19,6 +20,7 @@ class RegisterUser {
       userName: userName,
       email: email,
       password: password,
+      role: role, // Passed
       firstName: firstName,
       lastName: lastName,
       phoneNumber: phoneNumber,

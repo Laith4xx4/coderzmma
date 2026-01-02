@@ -48,9 +48,12 @@ class _SessionListPageState extends State<SessionListPage> {
   SessionEntity? _selectedSessionEntity; // Track entity for bottom bar display
 
   String? _userId;
-  int? _currentMemberId;
   bool _canManage = false;
   bool _isMember = false;
+  bool _isAdmin = false;
+  bool _isCoach = false;
+  int? _coachId;
+  String? _currentUserName;
 
   @override
   void initState() {
@@ -61,7 +64,8 @@ class _SessionListPageState extends State<SessionListPage> {
     context.read<ClassTypeCubit>().loadClassTypes();
     context.read<MemberCubit>().loadMembers();
     context.read<CoachCubit>().loadCoaches();
-    context.read<BookingCubit>().loadBookings();
+    context.read<CoachCubit>().loadCoaches();
+    // Bookings are loaded in _checkUser based on role
   }
 
   Future<void> _checkUser() async {
@@ -72,35 +76,91 @@ class _SessionListPageState extends State<SessionListPage> {
     }
     _canManage = await RoleHelper.canManageSessions();
     _isMember = await RoleHelper.isMember();
+    _isAdmin = await RoleHelper.isAdmin();
+    _isCoach = await RoleHelper.isCoach();
+
+    String? firstName = prefs.getString('firstName');
+    String? lastName = prefs.getString('lastName');
+
+    if (firstName != null && firstName.isNotEmpty && lastName != null && lastName.isNotEmpty) {
+      _currentUserName = '$firstName $lastName';
+    } else {
+      _currentUserName = prefs.getString('userName') ?? 'My Account';
+    }
+
+    // Resolve Coach ID if user is a coach
+    if (_isCoach && _userId != null && _coachId == null) {
+      final coachState = context.read<CoachCubit>().state;
+      if (coachState is CoachesLoaded) {
+        try {
+          final me = coachState.coaches.firstWhere((c) => c.userId == _userId);
+          _coachId = me.id;
+        } catch (_) {}
+      }
+    }
+    
+    if (mounted) {
+      if (_isMember) {
+        context.read<BookingCubit>().loadMyBookings();
+      } else {
+        context.read<BookingCubit>().loadBookings();
+      }
+    }
     setState(() {});
+  }
+
+  int? _resolveCoachId() {
+    if (_coachId != null) return _coachId;
+    if (!_isCoach || _userId == null) return null;
+
+    final state = context.read<CoachCubit>().state;
+    if (state is CoachesLoaded) {
+      try {
+        // 1. Try match by userId
+        final meByUserId = state.coaches.where((c) => c.userId == _userId).toList();
+        if (meByUserId.isNotEmpty) {
+          _coachId = meByUserId.first.id;
+          return _coachId;
+        }
+
+        // 2. Try match by userName (case-insensitive, no spaces)
+        final normalizedCurrentName = _currentUserName?.replaceAll(' ', '').toLowerCase();
+        final meByName = state.coaches.where((c) {
+          final normalizedCoachName = c.userName.replaceAll(' ', '').toLowerCase();
+          return normalizedCoachName == normalizedCurrentName;
+        }).toList();
+
+        if (meByName.isNotEmpty) {
+          _coachId = meByName.first.id;
+          return _coachId;
+        }
+      } catch (_) {}
+    }
+    return null;
   }
 
   @override
   Widget build(BuildContext context) {
-    // Resolve Member ID
-    final memberState = context.watch<MemberCubit>().state;
-    if (_currentMemberId == null && _userId != null && _userId!.isNotEmpty && memberState is MembersLoaded) {
-       try { 
-         _currentMemberId = memberState.members.firstWhere((m) => m.userId == _userId).id; 
-         print("SessionListPage: Resolved Member ID $_currentMemberId for User ID $_userId");
-       } catch (e) {
-         print("SessionListPage: Could not find member for User ID $_userId. Error: $e");
-       }
-    }
-
+    // المنطق الذي كان يحل MemberId لم يعد ضروريًا بفضل smart booking
     return MultiBlocListener(
       listeners: [
         BlocListener<BookingCubit, BookingState>(
           listener: (context, state) {
             if (state is BookingOperationSuccess) {
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text("Booking Successful!"), backgroundColor: Colors.green),
+                SnackBar(content: Text(state.message), backgroundColor: Colors.green),
               );
               setState(() {
                 _selectedSessionIdForBooking = null;
                 _selectedSessionEntity = null;
               });
-              context.read<SessionCubit>().loadSessions(); 
+              context.read<SessionCubit>().loadSessions();
+              // Reload bookings to update badges correctly
+              if (_isMember) {
+                context.read<BookingCubit>().loadMyBookings();
+              } else {
+                context.read<BookingCubit>().loadBookings();
+              }
             } else if (state is BookingError) {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(content: Text("Error: ${state.message}"), backgroundColor: Colors.red),
@@ -304,52 +364,64 @@ class _SessionListPageState extends State<SessionListPage> {
 
   Widget _buildSessionsList() {
     return BlocBuilder<SessionCubit, SessionState>(
-      builder: (context, state) {
-        if (state is SessionLoading) return const Center(child: CircularProgressIndicator(color: AppTheme.primaryColor));
-        
-        if (state is SessionsLoaded) {
-           List<SessionEntity> sessions = state.sessions.where((s) => DateUtils.isSameDay(s.startTime, _selectedDate)).toList();
-           
-           if (_selectedClassTypeId != null) {
-             sessions = sessions.where((s) => s.classTypeId == _selectedClassTypeId).toList();
-           }
-           
-           sessions.sort((a, b) => a.startTime.compareTo(b.startTime));
- 
-           if (sessions.isEmpty) return _buildEmptyState();
- 
-           return Expanded(
-             child: ListView.separated(
-               padding: const EdgeInsets.fromLTRB(16, 0, 16, 120), 
-               itemCount: sessions.length,
-               separatorBuilder: (_, __) => const SizedBox(height: 12),
-               itemBuilder: (context, index) {
-                 final session = sessions[index];
-                 return _buildSessionCard(session);
-               },
-             ),
-           );
-        }
-        
-        if (state is SessionError) return Center(child: Text("Error: ${state.message}", style: const TextStyle(color: Colors.red)));
-        return const SizedBox();
+      builder: (context, sessionState) {
+        return BlocBuilder<BookingCubit, BookingState>(
+          builder: (context, bookingState) {
+            if (sessionState is SessionLoading) return const Center(child: CircularProgressIndicator(color: AppTheme.primaryColor));
+            
+            if (sessionState is SessionsLoaded) {
+               List<SessionEntity> sessions = sessionState.sessions.where((s) => DateUtils.isSameDay(s.startTime, _selectedDate)).toList();
+               
+               if (_selectedClassTypeId != null) {
+                 sessions = sessions.where((s) => s.classTypeId == _selectedClassTypeId).toList();
+               }
+               
+               sessions.sort((a, b) => a.startTime.compareTo(b.startTime));
+     
+               if (sessions.isEmpty) return _buildEmptyState();
+
+                // Determine booked session map (SessionId -> BookingId)
+               Map<int, int> bookedSessionMap = {};
+               if (bookingState is BookingsLoaded && _isMember) {
+                 for (var b in bookingState.bookings) {
+                   if (b.status != 'Cancelled') {
+                     bookedSessionMap[b.sessionId] = b.id;
+                   }
+                 }
+               }
+     
+               return Expanded(
+                 child: ListView.separated(
+                   padding: const EdgeInsets.fromLTRB(16, 0, 16, 120), 
+                   itemCount: sessions.length,
+                   separatorBuilder: (_, __) => const SizedBox(height: 12),
+                   itemBuilder: (context, index) {
+                     final session = sessions[index];
+                     final bookingId = bookedSessionMap[session.id];
+                     final isBooked = bookingId != null;
+                     return _buildSessionCard(session, isBooked: isBooked, bookingId: bookingId);
+                   },
+                 ),
+               );
+            }
+            
+            if (sessionState is SessionError) return Center(child: Text("Error: ${sessionState.message}", style: const TextStyle(color: Colors.red)));
+            return const SizedBox();
+          },
+        );
       },
     );
   }
 
-  Widget _buildSessionCard(SessionEntity session) {
+  Widget _buildSessionCard(SessionEntity session, {bool isBooked = false, int? bookingId}) {
     bool isSelected = _selectedSessionIdForBooking == session.id;
     bool isFull = session.bookingsCount >= session.capacity;
     
-    // Check if current user already booked this session
-    bool isAlreadyBooked = false;
-    final bookingState = context.watch<BookingCubit>().state;
-    if (bookingState is BookingsLoaded && _currentMemberId != null) {
-      isAlreadyBooked = bookingState.bookings.any((b) => b.sessionId == session.id && b.memberId == _currentMemberId);
-    }
-    
     Color typeColor = AppTheme.primaryColor; 
     Color typeBg = AppTheme.primaryColor.withOpacity(0.1);
+    // ... existing color logic ...
+    
+    // Fix color logic that was cut off in context if needed, but assuming standard replacement
     if ((session.classTypeName ?? "").toLowerCase().contains("yoga")) {
       typeColor = Colors.purpleAccent;
       typeBg = Colors.purpleAccent.withOpacity(0.1);
@@ -360,6 +432,12 @@ class _SessionListPageState extends State<SessionListPage> {
     
     return GestureDetector(
       onTap: () {
+        if (isBooked && bookingId != null) {
+          // Show cancel dialog if booked
+          _showCancelBookingDialog(bookingId);
+          return;
+        }
+        
         if (!isFull && _isMember) {
           setState(() {
             _selectedSessionIdForBooking = session.id;
@@ -371,19 +449,23 @@ class _SessionListPageState extends State<SessionListPage> {
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: isFull 
-            ? AppTheme.errorColor.withOpacity(0.1) 
-            : (isSelected ? AppTheme.primaryColor.withOpacity(0.05) : AppTheme.surfaceColor),
+          color: isBooked 
+              ? AppTheme.primaryColor.withOpacity(0.1) // Green tint if booked
+              : (isFull 
+                ? AppTheme.errorColor.withOpacity(0.1) 
+                : (isSelected ? AppTheme.primaryColor.withOpacity(0.05) : AppTheme.surfaceColor)),
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color: isFull 
-              ? AppTheme.errorColor 
-              : (isSelected ? AppTheme.primaryColor : Colors.white.withOpacity(0.05)),
-            width: (isSelected || isFull) ? 2 : 1,
+            color: isBooked
+              ? AppTheme.primaryColor
+              : (isFull 
+                ? AppTheme.errorColor 
+                : (isSelected ? AppTheme.primaryColor : Colors.white.withOpacity(0.05))),
+            width: (isSelected || isFull || isBooked) ? 2 : 1,
           ),
           boxShadow: isFull 
             ? [BoxShadow(color: AppTheme.errorColor.withOpacity(0.1), blurRadius: 10)]
-            : (isSelected ? [BoxShadow(color: AppTheme.primaryColor.withOpacity(0.1), blurRadius: 10)] : []),
+            : (isSelected || isBooked ? [BoxShadow(color: AppTheme.primaryColor.withOpacity(0.1), blurRadius: 10)] : []),
         ),
         child: Row(
           children: [
@@ -428,13 +510,13 @@ class _SessionListPageState extends State<SessionListPage> {
                         "${session.endTime.difference(session.startTime).inMinutes} min",
                         style: TextStyle(color: Colors.grey.shade500, fontSize: 12),
                       ),
-                      if (isAlreadyBooked) ...[
-                        const SizedBox(width: 8),
+                      if (isBooked) ...[
+                         const SizedBox(width: 8),
                          const Text(
-                           "BOOKED",
+                           "Booked",
                            style: TextStyle(color: AppTheme.primaryColor, fontSize: 10, fontWeight: FontWeight.bold),
                          ),
-                      ] else if (isFull) ...[
+                      ] else if (isFull) ...[ 
                         const SizedBox(width: 8),
                          const Text(
                            "Waitlist Only",
@@ -468,21 +550,27 @@ class _SessionListPageState extends State<SessionListPage> {
               ),
             ),
             Container(
-               child: isFull 
+               child: isBooked
                  ? Container(
                       width: 32, height: 32,
-                      decoration: BoxDecoration(shape: BoxShape.circle, color: Colors.white.withOpacity(0.05)),
-                      child: const Icon(Icons.lock_outline, size: 16, color: Colors.grey),
-                    )
-                 : (_isMember ? Container(
-                      width: 32, height: 32,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: isSelected ? AppTheme.primaryColor : (isAlreadyBooked ? AppTheme.primaryColor.withOpacity(0.2) : Colors.transparent),
-                        border: Border.all(color:  isSelected ? AppTheme.primaryColor : Colors.grey.shade600, width: 2),
-                      ),
-                      child: isSelected ? const Icon(Icons.check, size: 18, color: Colors.black) : (isAlreadyBooked ? const Icon(Icons.check, size: 14, color: AppTheme.primaryColor) : null),
-                    ) : const SizedBox()),
+                      decoration: const BoxDecoration(shape: BoxShape.circle, color: AppTheme.primaryColor),
+                      child: const Icon(Icons.check, size: 18, color: Colors.black),
+                   )
+                 : (isFull 
+                   ? Container(
+                        width: 32, height: 32,
+                        decoration: BoxDecoration(shape: BoxShape.circle, color: Colors.white.withOpacity(0.05)),
+                        child: const Icon(Icons.lock_outline, size: 16, color: Colors.grey),
+                      )
+                   : (_isMember ? Container(
+                        width: 32, height: 32,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: isSelected ? AppTheme.primaryColor : Colors.transparent,
+                          border: Border.all(color:  isSelected ? AppTheme.primaryColor : Colors.grey.shade600, width: 2),
+                        ),
+                        child: isSelected ? const Icon(Icons.check, size: 18, color: Colors.black) : null,
+                      ) : const SizedBox())),
             )
           ],
         ),
@@ -561,28 +649,12 @@ class _SessionListPageState extends State<SessionListPage> {
         return;
      }
 
-     if (_selectedSessionIdForBooking == null || _currentMemberId == null) {
-        if (_currentMemberId == null) {
-          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Member profile not found"), backgroundColor: Colors.red));
-        }
-        return;
-     }
+     if (_selectedSessionIdForBooking == null) return;
 
-     print("SessionListPage: Booking Session ID: $_selectedSessionIdForBooking");
-     print("SessionListPage: Current User ID: $_userId");
-     print("SessionListPage: Resolved Member ID: $_currentMemberId");
+     print("SessionListPage: Booking Session ID: $_selectedSessionIdForBooking using smart booking");
 
-     final bookingData = CreateBookingModel(
-       memberId: _currentMemberId!,
-       sessionId: _selectedSessionIdForBooking!,
-       bookingTime: _selectedSessionEntity!.startTime,
-       status: 0 // 0 = Confirmed, 1 = Cancelled
-     );
-
-     // Fix: Call createBookingAction, don't call UseCase directly
-     context.read<BookingCubit>().createBookingAction(bookingData);
-     // Note: Removed setState and immediate SnackBar here. 
-     // The BlocListener in build() or _buildBookingBottomBar() should handle success/failure feedback.
+     // Simple call - no need to pass memberId, it's extracted from token automatically
+     context.read<BookingCubit>().bookSessionAction(_selectedSessionIdForBooking!);
   }
 
   // RBAC Management Methods
@@ -614,6 +686,31 @@ class _SessionListPageState extends State<SessionListPage> {
             },
           ),
           const SizedBox(height: 20),
+        ],
+      ),
+    );
+  }
+
+  void _showCancelBookingDialog(int bookingId) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: AppTheme.cardBackground,
+        title: const Text('Cancel Booking', style: TextStyle(color: Colors.white)),
+        content: const Text('You have booked this session. Do you want to cancel it?', style: TextStyle(color: Colors.white70)),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('No', style: TextStyle(color: Colors.grey)),
+          ),
+          TextButton(
+             onPressed: () {
+               Navigator.pop(context);
+               context.read<BookingCubit>().cancelBookingAction(bookingId);
+               // Note: The BlocListener in build will handle success message and refresh
+             }, 
+             child: const Text('Yes, Cancel', style: TextStyle(color: Colors.red))
+          ),
         ],
       ),
     );
@@ -651,7 +748,21 @@ class _SessionListPageState extends State<SessionListPage> {
   void _showSessionDialog({SessionEntity? session}) {
     final isEditing = session != null;
     final formKey = GlobalKey<FormState>();
+
+    // Final attempt to resolve coachId if null
+    if (!isEditing && _coachId == null) {
+      _coachId = _resolveCoachId();
+    }
     
+    // Auto-select class type if null and we have data
+    int? selectedClassTypeId = isEditing ? session.classTypeId : _selectedClassTypeId;
+    if (!isEditing && selectedClassTypeId == null) {
+       final ctState = context.read<ClassTypeCubit>().state;
+       if (ctState is ClassTypesLoaded && ctState.classTypes.isNotEmpty) {
+         selectedClassTypeId = ctState.classTypes.first.id;
+       }
+    }
+
     final nameController = TextEditingController(text: isEditing ? session.sessionName : "");
     final descriptionController = TextEditingController(text: isEditing ? session.description : "");
     final capacityController = TextEditingController(text: isEditing ? session.capacity.toString() : "20");
@@ -659,8 +770,7 @@ class _SessionListPageState extends State<SessionListPage> {
       text: isEditing ? session.endTime.difference(session.startTime).inMinutes.toString() : "60"
     );
     
-    int? selectedCoachId = isEditing ? session.coachId : null;
-    int? selectedClassTypeId = isEditing ? session.classTypeId : _selectedClassTypeId;
+    int? selectedCoachId = isEditing ? session.coachId : _coachId;
     DateTime sessionDate = isEditing ? session.startTime : _selectedDate;
     TimeOfDay sessionTime = isEditing ? TimeOfDay.fromDateTime(session.startTime) : const TimeOfDay(hour: 9, minute: 0);
 
@@ -701,9 +811,18 @@ class _SessionListPageState extends State<SessionListPage> {
                           return const Text('Loading class types...');
                         },
                       ),
+                      const SizedBox(height: 16),
                       BlocBuilder<CoachCubit, CoachState>(
                         builder: (context, state) {
                           if (state is CoachesLoaded) {
+                            if (_isCoach && !_isAdmin && selectedCoachId == null) {
+                               selectedCoachId = _resolveCoachId();
+                            }
+
+                            if (_isCoach && !_isAdmin) {
+                              return _buildReadOnlyField("Coach (Me)", _currentUserName ?? 'Coach');
+                            }
+
                             return DropdownButtonFormField<int>(
                               value: selectedCoachId,
                               dropdownColor: AppTheme.cardBackground,
@@ -779,13 +898,21 @@ class _SessionListPageState extends State<SessionListPage> {
                   child: const Text('Cancel'),
                 ),
                 ElevatedButton(
+                  style: AppTheme.primaryButtonStyle,
                   onPressed: () {
                     if (formKey.currentState!.validate()) {
+                      if (selectedCoachId == null || selectedClassTypeId == null) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Please select a Coach and Class Type'), backgroundColor: Colors.orange),
+                        );
+                        return;
+                      }
+
                       final start = DateTime(
                         sessionDate.year, sessionDate.month, sessionDate.day,
                         sessionTime.hour, sessionTime.minute
                       );
-                      final duration = int.parse(durationController.text);
+                      final duration = int.tryParse(durationController.text) ?? 60;
                       final end = start.add(Duration(minutes: duration));
                       
                       if (isEditing) {
@@ -793,7 +920,7 @@ class _SessionListPageState extends State<SessionListPage> {
                           sessionName: nameController.text,
                           startTime: start,
                           endTime: end,
-                          capacity: int.parse(capacityController.text),
+                          capacity: int.tryParse(capacityController.text) ?? 20,
                           description: descriptionController.text,
                         );
                         context.read<SessionCubit>().updateSessionAction(session.id, update);
@@ -804,7 +931,7 @@ class _SessionListPageState extends State<SessionListPage> {
                           classTypeId: selectedClassTypeId!,
                           startTime: start,
                           endTime: end,
-                          capacity: int.parse(capacityController.text),
+                          capacity: int.tryParse(capacityController.text) ?? 20,
                           description: descriptionController.text,
                         );
                         context.read<SessionCubit>().createSessionAction(create);
@@ -822,6 +949,21 @@ class _SessionListPageState extends State<SessionListPage> {
           },
         );
       },
+    );
+  }
+
+  Widget _buildReadOnlyField(String label, String value) {
+    return TextFormField(
+      initialValue: value,
+      readOnly: true,
+      style: const TextStyle(color: Colors.grey),
+      decoration: InputDecoration(
+        labelText: label,
+        labelStyle: const TextStyle(color: Colors.grey),
+        fillColor: Colors.black12,
+        filled: true,
+        border: const OutlineInputBorder(borderSide: BorderSide.none),
+      ),
     );
   }
 }

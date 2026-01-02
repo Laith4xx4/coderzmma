@@ -26,6 +26,9 @@ import 'package:thesavage/features/bookings/domain/use_cases/create_booking.dart
 import 'package:thesavage/features/bookings/domain/use_cases/delete_booking.dart';
 import 'package:thesavage/features/bookings/domain/use_cases/get_all_bookings.dart';
 import 'package:thesavage/features/bookings/domain/use_cases/update_booking.dart';
+import 'package:thesavage/features/bookings/domain/use_cases/book_session.dart';
+import 'package:thesavage/features/bookings/domain/use_cases/get_my_bookings.dart';
+import 'package:thesavage/features/bookings/domain/use_cases/cancel_booking.dart';
 import 'package:thesavage/features/bookings/presentation/bloc/booking_cubit.dart';
 
 // Attendance
@@ -129,11 +132,17 @@ Future<void> init() async {
   sl.registerLazySingleton(() => CreateBooking(sl<BookingRepositoryImpl>()));
   sl.registerLazySingleton(() => UpdateBooking(sl<BookingRepositoryImpl>()));
   sl.registerLazySingleton(() => DeleteBooking(sl<BookingRepositoryImpl>()));
+  sl.registerLazySingleton(() => BookSession(sl<BookingRepositoryImpl>()));
+  sl.registerLazySingleton(() => GetMyBookings(sl<BookingRepositoryImpl>()));
+  sl.registerLazySingleton(() => CancelBooking(sl<BookingRepositoryImpl>()));
   sl.registerFactory(() => BookingCubit(
     getAllBookings: sl<GetAllBookings>(),
     createBooking: sl<CreateBooking>(),
     updateBooking: sl<UpdateBooking>(),
     deleteBooking: sl<DeleteBooking>(),
+    bookSession: sl<BookSession>(),
+    getMyBookings: sl<GetMyBookings>(),
+    cancelBooking: sl<CancelBooking>(),
   ));
 
   //========================================

@@ -7,6 +7,7 @@ abstract class AuthRepository {
     required String userName,
     required String email,
     required String password,
+    String role = 'Client', // Default role added
     String? firstName,
     String? lastName,
     String? phoneNumber,

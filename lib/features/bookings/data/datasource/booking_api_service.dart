@@ -135,5 +135,76 @@ class BookingApiService {
       throw Exception('Failed to delete booking (${response.statusCode}): ${response.body}');
     }
   }
+
+  /// Smart Booking - يحجز الجلسة باستخدام token المستخدم الحالي
+  Future<BookingModel> bookSession(int sessionId) async {
+    final token = await _getToken();
+    final url = _buildUri('${ApiStrings.bookingsEndpoint}/book');
+
+    final response = await http.post(
+      url,
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+      body: json.encode({'sessionId': sessionId}),
+    );
+
+    if (response.statusCode == 200 || response.statusCode == 201) {
+      return BookingModel.fromJson(
+        json.decode(response.body) as Map<String, dynamic>,
+      );
+    } else {
+      throw Exception('Failed to book session (${response.statusCode}): ${response.body}');
+    }
+  }
+
+  /// Get current user's bookings
+  Future<List<BookingModel>> getMyBookings() async {
+    try {
+      final token = await _getToken();
+      final url = _buildUri('${ApiStrings.bookingsEndpoint}/my-bookings');
+
+      final response = await http.get(
+        url,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final List data = json.decode(response.body) as List;
+        return data
+            .map((e) => BookingModel.fromJson(e as Map<String, dynamic>))
+            .toList();
+      } else {
+        print('getMyBookings error: status=${response.statusCode}, body=${response.body}');
+        throw Exception('Failed to load my bookings: ${response.statusCode}');
+      }
+    } catch (e, st) {
+      print('getMyBookings exception: $e');
+      print(st);
+      rethrow;
+    }
+  }
+
+  /// Cancel a booking
+  Future<void> cancelBooking(int bookingId) async {
+    final token = await _getToken();
+    final url = _buildUri('${ApiStrings.bookingsEndpoint}/cancel/$bookingId');
+
+    final response = await http.post(
+      url,
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+    );
+
+    if (response.statusCode != 200 && response.statusCode != 204) {
+      throw Exception('Failed to cancel booking (${response.statusCode}): ${response.body}');
+    }
+  }
 }
 

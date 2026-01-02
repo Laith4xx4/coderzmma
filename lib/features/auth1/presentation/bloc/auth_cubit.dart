@@ -133,6 +133,7 @@ class AuthCubit extends Cubit<AuthState> {
         userName: userName, // Use the passed userName
         email: email,
         password: password,
+        role: role, // ✅ Pass role correctly
         firstName: firstName,
         lastName: lastName,
         phoneNumber: phoneNumber,

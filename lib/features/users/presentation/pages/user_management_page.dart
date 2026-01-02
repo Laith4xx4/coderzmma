@@ -161,16 +161,21 @@ class _UserManagementPageState extends State<UserManagementPage> {
     return Scaffold(
       backgroundColor: AppTheme.backgroundColor,
       appBar: AppBar(
+        centerTitle: true,
         title: const Text('User Management', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-        backgroundColor: AppTheme.primaryColor,
+        backgroundColor: Colors.transparent, // Transparent for dark theme
         iconTheme: const IconThemeData(color: Colors.white),
         elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white),
+          onPressed: () => Navigator.pop(context),
+        ),
         actions: [
           Padding(
             padding: const EdgeInsets.all(8.0),
             child: Chip(
-              label: Text(_currentUserRole.toUpperCase(), style: const TextStyle(color: AppTheme.primaryColor, fontWeight: FontWeight.bold)),
-              backgroundColor: Colors.white,
+              label: Text(_currentUserRole.toUpperCase(), style: const TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
+              backgroundColor: AppTheme.primaryColor, // Primary color for admin chip
             ),
           ),
         ],
@@ -266,7 +271,6 @@ class _UserCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // ... (Container and layout code remains same until dropdown items)
     return Container(
       margin: const EdgeInsets.only(bottom: AppTheme.spacingMD),
       decoration: AppTheme.cardDecoration(),
@@ -296,7 +300,7 @@ class _UserCard extends StatelessWidget {
                     children: [
                       Text(
                         user.displayName,
-                        style: AppTheme.bodyLarge.copyWith(fontWeight: FontWeight.bold),
+                        style: AppTheme.bodyLarge.copyWith(fontWeight: FontWeight.bold, color: Colors.white),
                       ),
                       Text(
                         '@${user.userName}',
@@ -321,7 +325,7 @@ class _UserCard extends StatelessWidget {
             ],
             const Padding(
               padding: EdgeInsets.symmetric(vertical: AppTheme.spacingSM),
-              child: Divider(),
+              child: Divider(color: Colors.white10), // Light divider
             ),
             Row(
               children: [
@@ -336,17 +340,18 @@ class _UserCard extends StatelessWidget {
                     decoration: BoxDecoration(
                       color: AppTheme.backgroundColor,
                       borderRadius: BorderRadius.circular(AppTheme.borderRadiusSmall),
-                      border: Border.all(color: Colors.grey.shade300),
+                      border: Border.all(color: Colors.white10),
                     ),
                     child: DropdownButtonHideUnderline(
                       child: DropdownButton<String>(
                         value: user.role,
                         isExpanded: true,
-                        icon: const Icon(Icons.keyboard_arrow_down_rounded),
+                        dropdownColor: AppTheme.cardBackground, // Dark dropdown
+                        icon: const Icon(Icons.keyboard_arrow_down_rounded, color: Colors.white70),
                         elevation: 2,
                         borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
                         items: () {
-                          final roles = ['Admin', 'Coach', 'Member', 'Client']; // Added Client
+                          final roles = ['Admin', 'Coach', 'Member', 'Client'];
                           if (!roles.contains(user.role)) {
                             roles.add(user.role);
                           }
@@ -364,7 +369,7 @@ class _UserCard extends StatelessWidget {
                                   Text(
                                     role,
                                     style: AppTheme.bodyMedium.copyWith(
-                                      color: role == user.role ? AppTheme.textPrimary : AppTheme.textSecondary,
+                                      color: role == user.role ? AppTheme.primaryColor : Colors.white,
                                       fontWeight: role == user.role ? FontWeight.bold : FontWeight.normal
                                     ),
                                   ),
@@ -399,7 +404,7 @@ class _UserCard extends StatelessWidget {
         Expanded(
           child: Text(
             text,
-            style: AppTheme.bodyMedium,
+            style: AppTheme.bodyMedium.copyWith(color: Colors.white70),
             overflow: TextOverflow.ellipsis,
           ),
         ),

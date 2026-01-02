@@ -14,6 +14,9 @@ import 'package:thesavage/features/sessions/presentation/bloc/session_state.dart
 import 'package:thesavage/features/memberpro/presentation/bloc/member_cubit.dart';
 import 'package:thesavage/features/memberpro/presentation/bloc/member_state.dart';
 
+import '../../../auth1/presentation/bloc/auth_cubit.dart';
+import '../../../auth1/presentation/bloc/auth_state.dart';
+
 class BookingListPage extends StatefulWidget {
   const BookingListPage({super.key});
 
@@ -103,9 +106,22 @@ class _BookingListPageState extends State<BookingListPage> {
                         itemCount: bookings.length,
                         itemBuilder: (context, index) {
                           final booking = bookings[index];
+                          // Check if user is admin to show Edit button
+                          // For now, let's assume Members don't see edit.
+                          // Ideally we should use RoleHelper or state.
+                          // Since we don't have direct role access here easily without context read again or passing it down.
+                          // But we can check context.read<AuthCubit>().state.user.role
+                          
+                          // Quick fix: Check role from AuthCubit (assuming it's loaded)
+                          final userRole = context.read<AuthCubit>().state is AuthSuccess
+                              ? (context.read<AuthCubit>().state as AuthSuccess).user.role 
+                              : "Client";
+                          final isAdmin = userRole.toLowerCase() == 'admin';
+                          final isClient = userRole.toLowerCase() == 'client';
+
                           return BookingCard(
                             booking: booking,
-                            onEdit: () => _showEditBookingDialog(context, booking),
+                            onEdit: isAdmin ? () => _showEditBookingDialog(context, booking) : null,
                             onCancel: () => _showCancelDialog(context, booking.id),
                           );
                         },
@@ -366,9 +382,8 @@ class _BookingListPageState extends State<BookingListPage> {
           TextButton(onPressed: () => Navigator.pop(context), child: const Text('No', style: TextStyle(color: Colors.grey))),
           TextButton(
              onPressed: () {
-               // Assuming Delete = Cancel for now directly, or Update status to Cancelled?
-               // The original code used deleteBookingAction.
-               context.read<BookingCubit>().deleteBookingAction(bookingId);
+               // Use cancelBookingAction to properly cancel the booking
+               context.read<BookingCubit>().cancelBookingAction(bookingId);
                Navigator.pop(context);
              }, 
              child: const Text('Yes, Cancel', style: TextStyle(color: Colors.red))

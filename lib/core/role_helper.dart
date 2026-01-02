@@ -51,9 +51,9 @@ class RoleHelper {
     return await isAdmin();
   }
 
-  /// Check if user can manage sessions (Admin and Coach)
+  /// Check if user can manage sessions (Admin only)
   static Future<bool> canManageSessions() async {
-    return await isAdmin() || await isCoach();
+    return await isAdmin();
   }
 
   /// Check if user can manage class types (Admin only)

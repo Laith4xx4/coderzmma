@@ -49,6 +49,23 @@ class BookingRepositoryImpl implements BookingRepository {
   Future<void> deleteBooking(int id) async {
     await apiService.deleteBooking(id);
   }
+
+  @override
+  Future<BookingEntity> bookSession(int sessionId) async {
+    final model = await apiService.bookSession(sessionId);
+    return _mapModelToEntity(model);
+  }
+
+  @override
+  Future<List<BookingEntity>> getMyBookings() async {
+    final List<BookingModel> models = await apiService.getMyBookings();
+    return models.map(_mapModelToEntity).toList();
+  }
+
+  @override
+  Future<void> cancelBooking(int bookingId) async {
+    await apiService.cancelBooking(bookingId);
+  }
 }
 
 

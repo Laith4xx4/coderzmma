@@ -35,11 +35,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
       builder: (context, child) {
         return Theme(
           data: Theme.of(context).copyWith(
-            colorScheme: const ColorScheme.light(
-              primary: AppTheme.primaryColor, // الأسود الفخم
-              onPrimary: Colors.white,
-              onSurface: AppTheme.primaryColor,
+            colorScheme: const ColorScheme.dark(
+              primary: AppTheme.primaryColor,
+              onPrimary: Colors.black, // Text on selected date
+              surface: AppTheme.cardBackground, // Dialog background
+              onSurface: Colors.white, // Text color
             ),
+            dialogBackgroundColor: AppTheme.cardBackground,
           ),
           child: child!,
         );
@@ -64,7 +66,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios_new_rounded, color: AppTheme.primaryColor),
-          onPressed: () => Navigator.pop(context),
+          onPressed: () => Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const LoginScreen())),
         ),
       ),
       body: BlocConsumer<AuthCubit, AuthState>(
@@ -182,12 +184,20 @@ class _RegisterScreenState extends State<RegisterScreen> {
         decoration: InputDecoration(
           labelText: label,
           labelStyle: AppTheme.bodySmall,
-          prefixIcon: Icon(icon, color: AppTheme.primaryColor, size: 20),
+          prefixIcon: Container(
+            margin: const EdgeInsets.fromLTRB(12, 12, 8, 12),
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: AppTheme.primaryColor.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(icon, color: AppTheme.primaryColor, size: 20),
+          ),
           suffixIcon: isPassword
-              ? IconButton(icon: Icon(obscure ? Icons.visibility_off : Icons.visibility, size: 20), onPressed: onToggle)
+              ? IconButton(icon: Icon(obscure ? Icons.visibility_off : Icons.visibility, size: 20, color: Colors.grey), onPressed: onToggle)
               : null,
           border: InputBorder.none,
-          contentPadding: const EdgeInsets.symmetric(vertical: 18, horizontal: 16),
+          contentPadding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
         ),
       ),
     );
@@ -214,7 +224,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
         userName: _userNameController.text, 
         email: _emailController.text,
         password: _passwordController.text,
-        role: 'Client', // Default role is now Client
+        role: 'Client', // Forced Client role for new registrations
         firstName: _firstNameController.text.isEmpty ? null : _firstNameController.text,
         lastName: _lastNameController.text.isEmpty ? null : _lastNameController.text,
         phoneNumber: _phoneController.text.isEmpty ? null : _phoneController.text,

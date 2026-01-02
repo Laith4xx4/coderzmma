@@ -18,6 +18,7 @@ import 'package:thesavage/features/sessions/presentation/pages/session_list_page
 import 'package:thesavage/features/feedbacks/presentation/pages/feedback_list_page.dart';
 import 'package:thesavage/features/classtypes/presentation/pages/class_type_list_page.dart';
 import 'package:thesavage/features/users/presentation/pages/edit_profile_page.dart';
+import 'package:thesavage/features/support/presentation/pages/support_messages_page.dart';
 
 class Person extends StatefulWidget {
   const Person({super.key});
@@ -32,6 +33,7 @@ class _PersonState extends State<Person> with AutomaticKeepAliveClientMixin {
   bool isLoading = true;
   bool _isAdmin = false;
   bool _isClient = false; // Add _isClient state
+  bool _isCoach = false; // Add _isCoach
 
   @override
   bool get wantKeepAlive => true;
@@ -76,6 +78,7 @@ class _PersonState extends State<Person> with AutomaticKeepAliveClientMixin {
       userRole = prefs.getString("userRole") ?? "Admin";
       _isAdmin = userRole.toLowerCase() == 'admin';
       _isClient = userRole.toLowerCase() == 'client'; // Check client role
+      _isCoach = userRole.toLowerCase() == 'coach'; // Initialize _isCoach
       isLoading = false;
     });
   }
@@ -98,6 +101,7 @@ class _PersonState extends State<Person> with AutomaticKeepAliveClientMixin {
               userRole = newRole;
               _isAdmin = newRole.toLowerCase() == 'admin';
               _isClient = newRole.toLowerCase() == 'client';
+              _isCoach = newRole.toLowerCase() == 'coach'; // Add coach check
             });
           }
         }
@@ -122,6 +126,7 @@ class _PersonState extends State<Person> with AutomaticKeepAliveClientMixin {
                   _QuickActions(
                     isAdmin: _isAdmin,
                     isClient: _isClient,
+                    isCoach: _isCoach, // Pass isCoach
                     onNavigate: _navigateTo,
                   ),
                   const SizedBox(height: 32),
@@ -286,11 +291,13 @@ class _SectionHeader extends StatelessWidget {
 class _QuickActions extends StatelessWidget {
   final bool isAdmin;
   final bool isClient;
+  final bool isCoach;
   final void Function(Widget) onNavigate;
 
   const _QuickActions({
     required this.isAdmin,
     required this.isClient,
+    required this.isCoach,
     required this.onNavigate,
   });
 
@@ -319,6 +326,11 @@ class _QuickActions extends StatelessWidget {
             title: 'Class Types',
             onTap: () => onNavigate(const ClassTypeListPage()),
           ),
+          _ActionCard(
+            icon: Icons.support_agent_rounded,
+            title: 'Support Inbox',
+            onTap: () => onNavigate(const SupportMessagesPage()),
+          ),
         ],
         _ActionCard(
           icon: Icons.calendar_today_rounded,
@@ -326,16 +338,17 @@ class _QuickActions extends StatelessWidget {
           onTap: () => onNavigate(const SessionListPage()),
         ),
         
-        // Hide Attendance for Client
-        if (!isClient)
+        
+        // Show Attendance only for Admin and Coach
+        if (isAdmin || isCoach)
         _ActionCard(
           icon: Icons.assignment_turned_in_rounded,
           title: 'Attendance',
           onTap: () => onNavigate(const AttendanceListPage()),
         ),
         
-        // Hide Bookings for Client
-        if (!isClient)
+        // Show Bookings only for Admin and Coach
+        if (isAdmin || isCoach)
         _ActionCard(
           icon: Icons.bookmark_added_rounded,
           title: 'Bookings',

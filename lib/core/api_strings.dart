@@ -2,18 +2,22 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 
 class ApiStrings {
+  // ⚡ Change this to true to test local changes
+  static const bool useLocalhost = false; 
+
   static String get baseUrl {
+    if (useLocalhost) {
+      if (kIsWeb) return 'http://localhost:5086/api';
+      if (Platform.isAndroid) return 'http://10.0.2.2:5086/api';
+      return 'http://localhost:5086/api';
+    }
 
     if (kIsWeb) return 'http://thesavage.runasp.net/api';
     
-
     if (Platform.isAndroid) {
-
-      // 192.168.100.66 هو عنوان جهازك الحالي
       return 'http://thesavage.runasp.net/api';
     }
     
-    // للـ iOS أو غيره
     return 'http://thesavage.runasp.net/api';
   }
 

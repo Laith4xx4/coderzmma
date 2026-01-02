@@ -318,6 +318,7 @@ class AuthRepositoryImpl implements AuthRepository {
     required String userName,
     required String email,
     required String password,
+    String role = 'Client', // Default role
     String? firstName,
     String? lastName,
     String? phoneNumber,
@@ -328,7 +329,7 @@ class AuthRepositoryImpl implements AuthRepository {
       'userName': userName,
       'email': email,
       'password': password,
-      'role': 'Member',
+      'role': role, // ✅ Use passed role
       'firstName': firstName,
       'lastName': lastName,
       'phoneNumber': phoneNumber,

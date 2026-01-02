@@ -309,9 +309,9 @@ class _StatisticsGrid extends StatelessWidget {
     
     return Column(
       children: [
-        // Row 1: Book Class (Sessions) - Big Button
+        // Row 1: Book Class (Sessions) or Schedule
         _ActionCard(
-          title: "Book Class",
+          title: isClient ? "View Schedule" : "Book Class",
           icon: Icons.calendar_today_rounded,
           isPrimary: true,
           onTap: () {
@@ -322,8 +322,9 @@ class _StatisticsGrid extends StatelessWidget {
         const SizedBox(height: 16),
         // Row 2: Grid for others
         Row(
+          crossAxisAlignment: CrossAxisAlignment.start, // Ensure alignment
           children: [
-            // Feedbacks/Members
+            // Admin/Coach: Members
             if (isAdmin || isCoach)
               Expanded(
                 child: _ActionCard(
@@ -336,7 +337,22 @@ class _StatisticsGrid extends StatelessWidget {
                   },
                 ),
               )
-            else if (!isClient)
+            // Client: Coaches
+            else if (isClient)
+              Expanded(
+                child: _ActionCard(
+                  title: "Coaches",
+                  icon: Icons.sports_gymnastics_outlined,
+                  isPrimary: false,
+                  onTap: () {
+                    // Navigate to CoachListPage
+                    // Ensure you assume read-only inside that page
+                     Navigator.push(context, _createRoute(const CoachListPage()));
+                  },
+                ),
+              )
+            // Member: Feedback
+            else 
               Expanded(
                 child: _ActionCard(
                   title: "Feedback",
@@ -349,8 +365,10 @@ class _StatisticsGrid extends StatelessWidget {
                 ),
               ),
             
-            if (!isClient) ...[
-              const SizedBox(width: 16),
+            const SizedBox(width: 16),
+
+            // History (for non-clients) or Features (for Clients)
+            if (!isClient) 
               Expanded(
                 child: _ActionCard(
                   title: "History",
@@ -361,9 +379,19 @@ class _StatisticsGrid extends StatelessWidget {
                     Navigator.push(context, _createRoute(const BookingListPage()));
                   },
                 ),
-              ),
-            ] else 
-               const Spacer(), // Balance layout if client
+              )
+            else 
+             Expanded(
+                child: _ActionCard(
+                  title: "Features", // Class Types
+                  icon: Icons.category_outlined,
+                  isPrimary: false,
+                  onTap: () {
+                    context.read<ClassTypeCubit>().loadClassTypes();
+                     Navigator.push(context, _createRoute(const ClassTypeListPage()));
+                  },
+                ),
+             )
           ],
         ),
         if (!isClient) ...[

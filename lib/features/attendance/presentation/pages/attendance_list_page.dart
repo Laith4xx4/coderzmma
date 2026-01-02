@@ -49,28 +49,41 @@ class _AttendanceListPageState extends State<AttendanceListPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppTheme.backgroundColor,
-      body: SafeArea(
-        child: Column(
-          children: [
-            _buildHeader(context),
-            _buildSessionSelector(),
-            _buildActionArea(),
-            Expanded(
-              child: _buildAttendanceList(),
-            ),
-          ],
+    return BlocListener<AttendanceCubit, AttendanceState>(
+      listener: (context, state) {
+        if (state is AttendanceOperationSuccess) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(state.message), backgroundColor: AppTheme.primaryColor),
+          );
+        } else if (state is AttendanceError) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(state.message), backgroundColor: AppTheme.errorColor),
+          );
+        }
+      },
+      child: Scaffold(
+        backgroundColor: AppTheme.backgroundColor,
+        body: SafeArea(
+          child: Column(
+            children: [
+              _buildHeader(context),
+              _buildSessionSelector(),
+              _buildActionArea(),
+              Expanded(
+                child: _buildAttendanceList(),
+              ),
+            ],
+          ),
         ),
+        floatingActionButton: canManage && _selectedSessionId != null
+            ? FloatingActionButton.extended(
+                onPressed: () => _showAddAttendanceDialog(context),
+                backgroundColor: AppTheme.primaryColor,
+                icon: const Icon(Icons.person_add_alt_1, color: Colors.black),
+                label: const Text("Manual Mark", style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
+              )
+            : null,
       ),
-       floatingActionButton: canManage && _selectedSessionId != null
-          ? FloatingActionButton.extended(
-              onPressed: () => _showAddAttendanceDialog(context),
-              backgroundColor: AppTheme.primaryColor,
-              icon: const Icon(Icons.person_add_alt_1, color: Colors.black),
-              label: const Text("Manual Mark", style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
-            )
-          : null,
     );
   }
 
@@ -200,112 +213,106 @@ class _AttendanceListPageState extends State<AttendanceListPage> {
       return const Center(child: Text("Please select a session to view attendance", style: TextStyle(color: Colors.grey)));
     }
 
-    return MultiBlocBuilder(
-      blocs: [
-        context.watch<AttendanceCubit>(),
-        context.watch<BookingCubit>(),
-        context.watch<MemberCubit>(),
-      ],
-      builder: (context, states) {
-        final attendanceState = states[0] as AttendanceState;
-        final bookingState = states[1] as BookingState;
-        final memberState = states[2] as MemberState;
- 
-        if (attendanceState is AttendanceLoading || bookingState is BookingLoading || memberState is MemberLoading) {
-           return const Center(child: CircularProgressIndicator(color: AppTheme.primaryColor));
-        }
- 
-        if (attendanceState is AttendancesLoaded && memberState is MembersLoaded) {
-           List<MemberProfileEntity> allMembers = memberState.members;
-           
-           // Resolve selected session to get bookings directly
-           List<BookingEntity> sessionBookings = [];
-           final sessionState = context.read<SessionCubit>().state;
-           if (sessionState is SessionsLoaded) {
-             try {
-                final session = sessionState.sessions.firstWhere((s) => s.id == _selectedSessionId);
-                sessionBookings = session.bookings;
-                
-                // Fallback: If session bookings are empty but we have bookings in BookingCubit, use those
-                 if (sessionBookings.isEmpty && bookingState is BookingsLoaded) {
-                   print("AttendanceListPage: Session bookings empty, falling back to BookingCubit");
-                   sessionBookings = bookingState.bookings.where((b) => b.sessionId == _selectedSessionId).toList();
-                 }
-             } catch (_) {
-                // Fallback or session not found in list (shouldn't happen if selected)
-                if (bookingState is BookingsLoaded) {
-                   sessionBookings = bookingState.bookings.where((b) => b.sessionId == _selectedSessionId).toList();
+    return BlocBuilder<AttendanceCubit, AttendanceState>(
+      builder: (context, attendanceState) {
+        return BlocBuilder<BookingCubit, BookingState>(
+          builder: (context, bookingState) {
+            return BlocBuilder<MemberCubit, MemberState>(
+              builder: (context, memberState) {
+                if (attendanceState is AttendanceLoading || bookingState is BookingLoading || memberState is MemberLoading) {
+                   return const Center(child: CircularProgressIndicator(color: AppTheme.primaryColor));
                 }
-             }
-           } else if (bookingState is BookingsLoaded) {
-               // Fallback if SessionCubit not ready
-               sessionBookings = bookingState.bookings.where((b) => b.sessionId == _selectedSessionId).toList();
-           }
 
-          final sessionAttendances = attendanceState.attendances.where((a) => a.sessionId == _selectedSessionId).toList();
+                if (attendanceState is AttendancesLoaded && memberState is MembersLoaded) {
+                   List<MemberProfileEntity> allMembers = memberState.members;
+                   
+                   // Resolve selected session bookings
+                   List<BookingEntity> sessionBookings = [];
+                   final sessionState = context.read<SessionCubit>().state;
+                   
+                   // Logic to extract bookings for selected session
+                   if (sessionState is SessionsLoaded) {
+                     try {
+                        final session = sessionState.sessions.firstWhere((s) => s.id == _selectedSessionId);
+                        sessionBookings = session.bookings.where((b) => b.status != 'Cancelled').toList();
+                        
+                         if (sessionBookings.isEmpty && bookingState is BookingsLoaded) {
+                           sessionBookings = bookingState.bookings.where((b) => b.sessionId == _selectedSessionId && b.status != 'Cancelled').toList();
+                         }
+                     } catch (_) {
+                        if (bookingState is BookingsLoaded) {
+                           sessionBookings = bookingState.bookings.where((b) => b.sessionId == _selectedSessionId && b.status != 'Cancelled').toList();
+                        }
+                     }
+                   } else if (bookingState is BookingsLoaded) {
+                       sessionBookings = bookingState.bookings.where((b) => b.sessionId == _selectedSessionId && b.status != 'Cancelled').toList();
+                   }
 
-          // 2. Merge into a unique list of members to display
-          final Map<int, AttendanceEntity> displayMap = {};
+                  final sessionAttendances = attendanceState.attendances.where((a) => a.sessionId == _selectedSessionId).toList();
 
-          // Helper to get correct name
-          String resolveName(int memberId, String fallback) {
-            try {
-              final m = allMembers.firstWhere((m) => m.id == memberId);
-              if (m.firstName != null && m.firstName!.isNotEmpty) {
-                return "${m.firstName} ${m.lastName ?? ''}".trim();
-              }
-              return m.userName;
-            } catch (_) {
-              return fallback;
-            }
-          }
+                  // Merge logic
+                  final Map<int, AttendanceEntity> displayMap = {};
 
-          // Add placeholders for everyone who booked
-          for (var b in sessionBookings) {
-            displayMap[b.memberId] = AttendanceEntity(
-              id: -1, 
-              sessionId: _selectedSessionId!, 
-              sessionName: b.sessionName, 
-              memberId: b.memberId, 
-              memberName: resolveName(b.memberId, b.memberName), 
-              status: "Not Marked",
+                  String resolveName(int memberId, String fallback) {
+                    try {
+                      final m = allMembers.firstWhere((m) => m.id == memberId);
+                      if (m.firstName != null && m.firstName!.isNotEmpty) {
+                        return "${m.firstName} ${m.lastName ?? ''}".trim();
+                      }
+                      return m.userName;
+                    } catch (_) {
+                      return fallback;
+                    }
+                  }
+
+                  // Add bookings placeholders
+                  for (var b in sessionBookings) {
+                    displayMap[b.memberId] = AttendanceEntity(
+                      id: -1, 
+                      sessionId: _selectedSessionId!, 
+                      sessionName: b.sessionName, 
+                      memberId: b.memberId, 
+                      memberName: resolveName(b.memberId, b.memberName), 
+                      status: "Not Marked",
+                    );
+                  }
+
+                  // Override with actual attendance
+                  for (var a in sessionAttendances) {
+                     displayMap[a.memberId] = AttendanceEntity(
+                       id: a.id,
+                       sessionId: a.sessionId,
+                       sessionName: a.sessionName,
+                       memberId: a.memberId,
+                       memberName: resolveName(a.memberId, a.memberName),
+                       status: a.status,
+                     );
+                  }
+
+                  if (displayMap.isEmpty) {
+                    return const Center(child: Text("No members found for this session.", style: TextStyle(color: Colors.grey)));
+                  }
+
+                  final query = _searchController.text.toLowerCase();
+                  final displayList = displayMap.values.where((u) => u.memberName.toLowerCase().contains(query)).toList();
+
+                  return ListView.builder(
+                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 80),
+                    itemCount: displayList.length,
+                    itemBuilder: (context, index) {
+                      final attendance = displayList[index];
+                      return _buildAttendanceRow(attendance);
+                    },
+                  );
+                }
+
+                if (attendanceState is AttendanceError) return Center(child: Text("Error: ${attendanceState.message}", style: const TextStyle(color: Colors.red)));
+                
+                return const Center(child: Text("Preparing list...", style: TextStyle(color: Colors.grey)));
+              },
             );
-          }
-
-          // Override/Add actual attendance records
-          for (var a in sessionAttendances) {
-             // Re-resolve name even for existing records to ensure accuracy
-             displayMap[a.memberId] = AttendanceEntity(
-               id: a.id,
-               sessionId: a.sessionId,
-               sessionName: a.sessionName,
-               memberId: a.memberId,
-               memberName: resolveName(a.memberId, a.memberName),
-               status: a.status,
-             );
-          }
-
-          if (displayMap.isEmpty) {
-            return const Center(child: Text("No members found for this session.", style: TextStyle(color: Colors.grey)));
-          }
-
-          // Search filtering
-          final query = _searchController.text.toLowerCase();
-          final displayList = displayMap.values.where((u) => u.memberName.toLowerCase().contains(query)).toList();
-
-          return ListView.builder(
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 80),
-            itemCount: displayList.length,
-            itemBuilder: (context, index) {
-              final attendance = displayList[index];
-              return _buildAttendanceRow(attendance);
-            },
-          );
-        }
-
-        if (attendanceState is AttendanceError) return Center(child: Text("Error: ${attendanceState.message}", style: const TextStyle(color: Colors.red)));
-        
-        return const Center(child: Text("Preparing list...", style: TextStyle(color: Colors.grey)));
+          },
+        );
       },
     );
   }
@@ -520,14 +527,4 @@ class _AttendanceListPageState extends State<AttendanceListPage> {
   }
 }
 
-class MultiBlocBuilder extends StatelessWidget {
-  final List<BlocBase> blocs;
-  final Widget Function(BuildContext context, List<dynamic> states) builder;
 
-  const MultiBlocBuilder({super.key, required this.blocs, required this.builder});
-
-  @override
-  Widget build(BuildContext context) {
-    return builder(context, blocs.map((b) => b.state).toList());
-  }
-}

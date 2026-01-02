@@ -374,6 +374,16 @@ class _FeedbackListPageState extends State<FeedbackListPage> {
       builder: (dialogContext) {
         return StatefulBuilder(
           builder: (context, setStateDialog) {
+            // Filter sessions by selected coach
+            final filteredSessions = sessions.where((s) => s.coachId == selectedCoachId).toList();
+
+            // Ensure selectedSessionId is valid for the current filteredSessions
+            if (selectedSessionId != null && !filteredSessions.any((s) => s.id == selectedSessionId)) {
+              selectedSessionId = filteredSessions.isNotEmpty ? filteredSessions.first.id : null;
+            } else if (selectedSessionId == null && filteredSessions.isNotEmpty) {
+              selectedSessionId = filteredSessions.first.id;
+            }
+
             return AlertDialog(
               backgroundColor: AppTheme.cardBackground,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
@@ -407,7 +417,9 @@ class _FeedbackListPageState extends State<FeedbackListPage> {
                              "Select Coach",
                              selectedCoachId,
                              coaches.map<DropdownMenuItem<int>>((c) => DropdownMenuItem(value: c.id, child: Text(c.userName))).toList(),
-                             (v) => setStateDialog(() => selectedCoachId = v),
+                             (v) => setStateDialog(() {
+                               selectedCoachId = v;
+                             }),
                           )
                        else
                           _buildReadOnlyField("Coach (Me)", _currentUserName ?? ''),
@@ -417,7 +429,7 @@ class _FeedbackListPageState extends State<FeedbackListPage> {
                        _buildDropdown<int>(
                          "Select Session",
                          selectedSessionId,
-                         sessions.map<DropdownMenuItem<int>>((s) => DropdownMenuItem(value: s.id, child: Text('Session #${s.id} - ${s.classTypeName}'))).toList(),
+                         filteredSessions.map<DropdownMenuItem<int>>((s) => DropdownMenuItem(value: s.id, child: Text('${s.sessionName} (${s.classTypeName})'))).toList(),
                          (v) => setStateDialog(() => selectedSessionId = v),
                        ),
                        
@@ -546,7 +558,7 @@ class _FeedbackListPageState extends State<FeedbackListPage> {
         value: e.value, 
         child: DefaultTextStyle(style: const TextStyle(color: Colors.white), child: e.child) // Fix text color in dropdown
       )).toList(),
-      dropdownColor: const Color(0xFF2C3E34),
+      dropdownColor: AppTheme.cardBackground,
       onChanged: onChanged,
       decoration: InputDecoration(
         labelText: label,
@@ -635,7 +647,7 @@ class FeedbackCard extends StatelessWidget {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      "To: ${item.senderType == 'Coach' ? item.memberName : item.coachName} • Session #${item.sessionId}",
+                      "To: ${item.senderType == 'Coach' ? item.memberName : item.coachName} • ${item.sessionName}",
                       style: TextStyle(color: Colors.grey.shade500, fontSize: 12),
                     ),
                   ],
