@@ -645,7 +645,7 @@ class _SessionListPageState extends State<SessionListPage> {
 
   void _handleBooking() {
      if (!_isMember) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Only members can book sessions"), backgroundColor: Colors.orange));
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Only members can book sessions"), backgroundColor: Colors.red));
         return;
      }
 

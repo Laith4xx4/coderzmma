@@ -97,7 +97,7 @@ class _MemberListPageState extends State<MemberListPage> {
           ? FloatingActionButton(
               onPressed: () => _showAddMemberDialog(context),
               backgroundColor: AppTheme.primaryColor,
-              child: const Icon(Icons.add, color: Colors.white),
+              child: const Icon(Icons.add, color: Color(0xFF000000)),
             )
           : null,
       body: BlocConsumer<MemberCubit, MemberState>(
