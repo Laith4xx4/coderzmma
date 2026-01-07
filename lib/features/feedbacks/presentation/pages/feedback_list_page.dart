@@ -605,7 +605,7 @@ class FeedbackCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // Resolving Names
-    final String senderName = (isOwnFeedback && currentUserName != null) ? currentUserName! : (item.senderType == 'Coach' ? item.coachName : item.memberName);
+    final String senderName = item.senderType == 'Coach' ? item.coachName : item.memberName;
     final String senderRole = item.senderType; 
     
     return Container(
