@@ -108,12 +108,12 @@ class _HomeState extends State<Home> with AutomaticKeepAliveClientMixin {
                 
                 // Weekly Goal / Stats Card
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 24),
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
                   child: Container(
-                    padding: const EdgeInsets.all(24),
+                    padding: const EdgeInsets.all(20),
                     decoration: BoxDecoration(
                       color: const Color(0xD20C0C0C), // Dark Green Card
-                      borderRadius: BorderRadius.circular(30),
+                      borderRadius: BorderRadius.circular(24),
                       boxShadow: AppTheme.cardShadow,
                     ),
                     child: Column(
@@ -125,42 +125,42 @@ class _HomeState extends State<Home> with AutomaticKeepAliveClientMixin {
                             Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text("Weekly Goal", style: AppTheme.heading3),
-                                Text("Keep your streak alive!", style: AppTheme.bodySmall),
+                                Text("Weekly Goal", style: AppTheme.heading3.copyWith(fontSize: 18)),
+                                Text("Keep your streak alive!", style: AppTheme.bodySmall.copyWith(fontSize: 11)),
                               ],
                             ),
                             Container(
-                              width: 50, height: 50,
+                              width: 45, height: 45,
                               decoration: BoxDecoration(
                                 shape: BoxShape.circle,
-                                border: Border.all(color: AppTheme.primaryColor, width: 3),
+                                border: Border.all(color: AppTheme.primaryColor, width: 2.5),
                                 color: AppTheme.primaryColor.withOpacity(0.1),
                               ),
                               child: Center(
-                                child: Text("3/5", style: TextStyle(color: AppTheme.primaryColor, fontWeight: FontWeight.bold)),
+                                child: Text("3/5", style: TextStyle(color: AppTheme.primaryColor, fontWeight: FontWeight.bold, fontSize: 13)),
                               ),
                             )
                           ],
                         ),
-                        const SizedBox(height: 20),
+                        const SizedBox(height: 16),
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Text("Attendance", style: TextStyle(color: AppTheme.textSecondary, fontSize: 13)),
-                            Text("60%", style: TextStyle(color: AppTheme.primaryColor, fontWeight: FontWeight.bold)),
+                            Text("Attendance", style: TextStyle(color: AppTheme.textSecondary, fontSize: 12)),
+                            Text("60%", style: TextStyle(color: AppTheme.primaryColor, fontWeight: FontWeight.bold, fontSize: 13)),
                           ],
                         ),
                         const SizedBox(height: 8),
                         ClipRRect(
-                          borderRadius: BorderRadius.circular(10),
+                          borderRadius: BorderRadius.circular(8),
                           child: LinearProgressIndicator(
                             value: 0.6,
                             backgroundColor: Colors.white.withOpacity(0.1),
                             valueColor: const AlwaysStoppedAnimation(AppTheme.primaryColor),
-                            minHeight: 10,
+                            minHeight: 8,
                           ),
                         ),
-                        const SizedBox(height: 24),
+                        const SizedBox(height: 20),
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
@@ -174,29 +174,29 @@ class _HomeState extends State<Home> with AutomaticKeepAliveClientMixin {
                   ),
                 ),
 
-                const SizedBox(height: 30),
+                const SizedBox(height: 20),
 
                 // Carousel
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 24),
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
                   child: ClipRRect(
-                    borderRadius: BorderRadius.circular(20),
+                    borderRadius: BorderRadius.circular(16),
                     child: const Carousl(),
                   ),
                 ),
 
-                const SizedBox(height: 30),
+                const SizedBox(height: 24),
 
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 24),
-                  child: Text("Quick Actions", style: AppTheme.heading3),
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  child: Text("Quick Actions", style: AppTheme.heading3.copyWith(fontSize: 18)),
                 ),
                 
-                const SizedBox(height: 16),
+                const SizedBox(height: 12),
 
                 // Grid
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 24),
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
                   child: _StatisticsGrid(
                     isAdmin: _isAdmin,
                     isCoach: _isCoach,
@@ -205,24 +205,24 @@ class _HomeState extends State<Home> with AutomaticKeepAliveClientMixin {
                   ),
                 ),
 
-                const SizedBox(height: 30),
+                const SizedBox(height: 24),
 
                 // Recent Classes
                  Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 24),
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text("Latest Classes", style: AppTheme.heading3),
+                      Text("Latest Classes", style: AppTheme.heading3.copyWith(fontSize: 18)),
                       TextButton(
                         onPressed: () => Navigator.push(context, _createRoute(const ClassTypeListPage())),
-                        child: Text("See all", style: TextStyle(color: AppTheme.primaryColor)),
+                        child: Text("See all", style: TextStyle(color: AppTheme.primaryColor, fontSize: 13)),
                       )
                     ],
                   ),
                 ),
                 const Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 24),
+                  padding: EdgeInsets.symmetric(horizontal: 20),
                   child: _RecentClasses(),
                 ),
               ],
@@ -235,39 +235,39 @@ class _HomeState extends State<Home> with AutomaticKeepAliveClientMixin {
 
   Widget _buildStitchHeader() {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(24, 20, 24, 30),
+      padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Row(
             children: [
               Container(
-                width: 50, height: 50,
+                width: 45, height: 45,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   color: Colors.grey.shade800,
                   border: Border.all(color: AppTheme.primaryColor, width: 2),
                 ),
-                child: const Icon(Icons.person, color: Colors.white),
+                child: const Icon(Icons.person, color: Colors.white, size: 22),
               ),
               const SizedBox(width: 12),
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text("WELCOME BACK", style: AppTheme.bodySmall.copyWith(fontSize: 10, letterSpacing: 1, fontWeight: FontWeight.bold)),
-                  Text(userRole ?? "User", style: AppTheme.heading2.copyWith(fontSize: 20)),
+                  Text("WELCOME BACK", style: AppTheme.bodySmall.copyWith(fontSize: 10, letterSpacing: 0.8, fontWeight: FontWeight.bold)),
+                  Text(userRole ?? "User", style: AppTheme.heading2.copyWith(fontSize: 18)),
                 ],
               ),
             ],
           ),
           Container(
-            width: 45, height: 45,
+            width: 40, height: 40,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               color: AppTheme.cardBackground,
               border: Border.all(color: AppTheme.primaryColor.withOpacity(0.3)),
             ),
-            child: Icon(Icons.notifications_none_rounded, color: Colors.white),
+            child: Icon(Icons.notifications_none_rounded, color: Colors.white, size: 22),
           )
         ],
       ),
@@ -277,12 +277,12 @@ class _HomeState extends State<Home> with AutomaticKeepAliveClientMixin {
   Widget _buildMiniStat(String label, String value, {bool isColor = false}) {
     return Column(
       children: [
-        Text(label, style: TextStyle(color: AppTheme.textSecondary, fontSize: 12)),
+        Text(label, style: TextStyle(color: AppTheme.textSecondary, fontSize: 11)),
         const SizedBox(height: 4),
         Text(value, style: TextStyle(
           color: isColor ? AppTheme.primaryColor : Colors.white, 
           fontWeight: FontWeight.bold, 
-          fontSize: 18)
+          fontSize: 16)
         ),
       ],
     );
@@ -319,7 +319,7 @@ class _StatisticsGrid extends StatelessWidget {
             Navigator.push(context, _createRoute(const SessionListPage()));
           },
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: 12),
         // Row 2: Grid for others
         Row(
           crossAxisAlignment: CrossAxisAlignment.start, // Ensure alignment
@@ -365,7 +365,7 @@ class _StatisticsGrid extends StatelessWidget {
                 ),
               ),
             
-            const SizedBox(width: 16),
+            const SizedBox(width: 12),
 
             // History (for non-clients) or Features (for Clients)
             if (!isClient) 
@@ -395,7 +395,7 @@ class _StatisticsGrid extends StatelessWidget {
           ],
         ),
         if (!isClient) ...[
-          const SizedBox(height: 16),
+          const SizedBox(height: 12),
            _ActionCard(
             title: "Analytics",
             icon: Icons.bar_chart_rounded,
@@ -429,32 +429,32 @@ class _ActionCard extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        height: 100, // Fixed height for consistency
-        padding: const EdgeInsets.all(20),
+        height: 72, // Further reduced height for a more compact look
+        padding: const EdgeInsets.symmetric(horizontal: 16), // Vertical centering handles the rest
         decoration: BoxDecoration(
           color: isPrimary ? AppTheme.primaryColor : AppTheme.cardBackground,
-          borderRadius: BorderRadius.circular(24),
-          border: isPrimary ? null : Border.all(color: const Color(0xFFDDDDDD)),
+          borderRadius: BorderRadius.circular(20),
+          border: isPrimary ? null : Border.all(color: const Color(0xFFDDDDDD), width: 0.5),
           boxShadow: isPrimary 
-              ? [BoxShadow(color: AppTheme.primaryColor.withOpacity(0.4), blurRadius: 12, offset: const Offset(0, 4))] 
+              ? [BoxShadow(color: AppTheme.primaryColor.withOpacity(0.25), blurRadius: 8, offset: const Offset(0, 3))] 
               : null,
         ),
         child: Row(
           children: [
             Container(
-              width: 50, height: 50,
+              width: 40, height: 40, // Slightly smaller icon container
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 color: isPrimary ? Colors.black.withOpacity(0.1) : Colors.white.withOpacity(0.05),
               ),
-              child: Icon(icon, color: isPrimary ? const Color(0xFF112117) : Colors.white),
+              child: Icon(icon, color: isPrimary ? const Color(0xFF112117) : Colors.white, size: 20),
             ),
-            const SizedBox(width: 16),
+            const SizedBox(width: 12),
             Text(
               title,
               style: AppTheme.heading3.copyWith(
                 color: isPrimary ? const Color(0xFF112117) : Colors.white,
-                fontSize: 18
+                fontSize: 15 // Slightly smaller text
               ),
             ),
           ],
@@ -491,54 +491,54 @@ class _ClassItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: const EdgeInsets.only(bottom: 16),
-      padding: const EdgeInsets.all(16),
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: AppTheme.cardBackground,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(16),
         border: Border.all(color: Colors.white.withOpacity(0.05)),
       ),
       child: Row(
         children: [
           Container(
-            height: 60, width: 60,
+            height: 50, width: 50,
             decoration: BoxDecoration(
               color: AppTheme.primaryColor.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(16),
+              borderRadius: BorderRadius.circular(12),
               border: Border.all(color: AppTheme.primaryColor.withOpacity(0.2)),
             ),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Text("NOW", style: TextStyle(color: AppTheme.primaryColor, fontWeight: FontWeight.bold, fontSize: 10)),
-                const Icon(Icons.bolt, color: AppTheme.primaryColor),
+                Text("NOW", style: TextStyle(color: AppTheme.primaryColor, fontWeight: FontWeight.bold, fontSize: 9)),
+                const Icon(Icons.bolt, color: AppTheme.primaryColor, size: 16),
               ],
             ),
           ),
-          const SizedBox(width: 16),
+          const SizedBox(width: 14),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(item.name ?? 'Class', style: AppTheme.bodyLarge.copyWith(fontWeight: FontWeight.bold)),
-                const SizedBox(height: 4),
+                Text(item.name ?? 'Class', style: AppTheme.bodyLarge.copyWith(fontWeight: FontWeight.bold, fontSize: 15)),
+                const SizedBox(height: 2),
                 Row(
                   children: [
-                    Icon(Icons.schedule, size: 14, color: AppTheme.textSecondary),
+                    Icon(Icons.schedule, size: 12, color: AppTheme.textSecondary),
                     const SizedBox(width: 4),
-                    Text('60 min', style: AppTheme.bodySmall),
+                    Text('60 min', style: AppTheme.bodySmall.copyWith(fontSize: 11)),
                   ],
                 )
               ],
             ),
           ),
           Container(
-             width: 40, height: 40,
+             width: 36, height: 36,
              decoration: BoxDecoration(
                shape: BoxShape.circle,
                color: Colors.white.withOpacity(0.05),
              ),
-             child: const Icon(Icons.arrow_forward, color: Colors.white, size: 20),
+             child: const Icon(Icons.arrow_forward, color: Colors.white, size: 18),
           )
         ],
       ),
